@@ -1,0 +1,137 @@
+{
+  "raiz_dataset": "C:\\Users\\erson\\Documents\\Programación\\ISIDEAD\\PlagIA\\dataset",
+  "estado_estructura": "CONSOLIDADO_RAIZ_REGLA_DE_ORO",
+  "carpetas_antiguas_eliminadas": [
+    "_archivo_crudo",
+    "_plagia_curado",
+    "Paddy Doctor - Paddy Disease Classification",
+    "pest",
+    "Rice crop diseases drone captured dataset",
+    "Rice Dataset",
+    "Rice Leaf Disease Images",
+    "Rice Leaf Diseases",
+    "RicePest-30-Dataset"
+  ],
+  "auditoria_origen_dron": {
+    "total_raw_files": 3727,
+    "duplicate_copy_files_count": 13,
+    "duplicate_copy_examples": [
+      "augmented__0_9419 - Copy.jpg",
+      "augmented__0_9504 - Copy.jpg"
+    ],
+    "augmented_files_count": 3695,
+    "cross_split_capture_sources": 4,
+    "cross_split_groups_count": 149,
+    "leaked_group_examples": [
+      "dron_roya_parda_cap0_b0",
+      "dron_sano_cap0_b0",
+      "dron_roya_amarilla_cap0_b0"
+    ]
+  },
+  "dominio_01_dron_dosel": {
+    "dominio": "01_dron_dosel_cls",
+    "total_imagenes_curadas": 3714,
+    "duplicados_eliminados": 13,
+    "clases": [
+      "sano",
+      "roya_parda",
+      "roya_amarilla",
+      "suelo_desnudo"
+    ],
+    "grupos_con_fuga": 0,
+    "ruta_manifiesto": "C:\\Users\\erson\\Documents\\Programación\\ISIDEAD\\PlagIA\\dataset\\01_dron_dosel_cls\\manifiesto_dron_curado.csv",
+    "distribucion": {
+      "roya_amarilla": {
+        "entrenamiento": 855,
+        "prueba": 203,
+        "validacion": 188
+      },
+      "roya_parda": {
+        "entrenamiento": 631,
+        "prueba": 131,
+        "validacion": 121
+      },
+      "sano": {
+        "entrenamiento": 599,
+        "prueba": 129,
+        "validacion": 126
+      },
+      "suelo_desnudo": {
+        "entrenamiento": 507,
+        "prueba": 109,
+        "validacion": 115
+      }
+    }
+  },
+  "dominio_02_campo_hoja": {
+    "dominio": "02_campo_hoja_cls",
+    "total_imagenes_curadas": 17964,
+    "duplicados_md5_eliminados": 1248,
+    "clases": [
+      "sano",
+      "piricularia",
+      "anublo_bacteriano_hoja",
+      "raya_bacteriana_hoja",
+      "anublo_bacteriano_panicula",
+      "mancha_parda",
+      "virosis_tungro",
+      "escaldado_carbon_hoja",
+      "dano_barrenador_tallo",
+      "dano_insecto_foliar"
+    ],
+    "grupos_con_fuga": 0,
+    "ruta_manifiesto": "C:\\Users\\erson\\Documents\\Programación\\ISIDEAD\\PlagIA\\dataset\\02_campo_hoja_cls\\manifiesto_campo_hoja_curado.csv",
+    "totales_por_clase": {
+      "piricularia": 3361,
+      "virosis_tungro": 2626,
+      "sano": 2345,
+      "mancha_parda": 2193,
+      "dano_insecto_foliar": 2115,
+      "anublo_bacteriano_hoja": 1837,
+      "dano_barrenador_tallo": 1694,
+      "escaldado_carbon_hoja": 1077,
+      "raya_bacteriana_hoja": 380,
+      "anublo_bacteriano_panicula": 336
+    }
+  },
+  "dominio_03_plagas_yolo": {
+    "dominio": "03_deteccion_plagas_yolo",
+    "imagenes_yolo_entrenamiento": 7915,
+    "imagenes_yolo_validacion": 933,
+    "total_cajas_delimitadoras_yolo": 62227,
+    "especies_unicas_nc": 29,
+    "nombres_especies_espanol": [
+      "Barrenador asiatico (Ostrinia furnacalis)",
+      "Barrenador rayado del tallo (Chilo suppressalis)",
+      "Enrollador de la hoja (Cnaphalocrocis medinalis)",
+      "Barrenador amarillo del arroz (Scirpophaga incertulas)",
+      "Gusano cogollero (Spodoptera frugiperda)",
+      "Complejo Spodoptera (Spodoptera spp.)",
+      "Barrenador rosado del tallo (Sesamia inferens)",
+      "Gusano trozador negro (Agrotis ipsilon)",
+      "Escarabajo metalico (Anomala corpulenta)",
+      "Chisa o mojojoy negro (Holotrichia diomphalia)",
+      "Escarabajo buceador (Dytiscidae)",
+      "Escarabajo acuatico del arrozal (Hydrochara affinis)",
+      "Grillo topo o perro de agua (Gryllotalpidae)",
+      "Chinche pirata (Sirthenea flavipes)",
+      "Medidor verde del arroz (Naranga aenescens)",
+      "Lorito verde o chicharrita (Jacobiasca formosana)",
+      "Polilla geómetra (Geometridae)",
+      "Escarabajo verde cobrizo (Anomala spp.)",
+      "Polilla dorso de diamante (Plutella xylostella)",
+      "Gusano cortador comun (Spodoptera litura)",
+      "Tricoptero de agua dulce (Trichoptera)",
+      "Falso medidor (Trichoplusia ni)",
+      "Gusano gris de suelo (Agrotis segetum)",
+      "Polilla defoliadora (Lymantriinae)",
+      "Noctuido pardo (Axylia putris)",
+      "Gusano nocturno menor (Athetis spp.)",
+      "Gusano bellotero (Helicoverpa armigera)",
+      "Gusano soldado (Spodoptera exigua)",
+      "Barrenador piralido (Diaphania pyloalis)"
+    ],
+    "ruta_data_yaml": "C:\\Users\\erson\\Documents\\Programación\\ISIDEAD\\PlagIA\\dataset\\03_deteccion_plagas_yolo\\data.yaml",
+    "imagenes_clasificacion_9_plagas": 991
+  }
+}

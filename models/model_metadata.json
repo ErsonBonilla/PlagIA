@@ -1,0 +1,121 @@
+{
+  "model_version": "1.0.0-enterprise",
+  "input_shape": [
+    1,
+    3,
+    224,
+    224
+  ],
+  "classes": [
+    "sano",
+    "roya_parda",
+    "roya_amarilla",
+    "suelo_desnudo"
+  ],
+  "server_onnx_path": "plagia_server_fp32.onnx",
+  "mobile_onnx_path": "plagia_mobile_int8.onnx",
+  "server_size_mb": 16.551,
+  "mobile_size_mb": 4.51,
+  "compression_ratio": 3.67,
+  "agronomic_catalog": {
+    "sano": {
+      "nombre_comun": "Cultivo Saludable",
+      "agente_causal": "N/A (Vigor fotosintético normal)",
+      "nivel_riesgo": "BAJO",
+      "severidad_base": 0.05,
+      "recomendacion_mip": "Mantener monitoreo periódico de lámina de agua y nutrición balanceada (N-P-K)."
+    },
+    "roya_parda": {
+      "nombre_comun": "Roya Parda Foliar",
+      "agente_causal": "Puccinia spp. / Complejo fúngico foliar",
+      "nivel_riesgo": "ALTO",
+      "severidad_base": 0.78,
+      "recomendacion_mip": "Inspeccionar foco georreferenciado; evaluar aplicación localizada de triazoles/estrobilurinas bajo aval agronómico."
+    },
+    "roya_amarilla": {
+      "nombre_comun": "Roya Amarilla / Clorosis Infecciosa",
+      "agente_causal": "Puccinia striiformis / Patógeno foliar",
+      "nivel_riesgo": "ALTO",
+      "severidad_base": 0.82,
+      "recomendacion_mip": "Verificar drenaje del lote, descartar deficiencia de nitrógeno y aplicar control fúngico focalizado en parche."
+    },
+    "suelo_desnudo": {
+      "nombre_comun": "Suelo Desnudo / Pérdida de Densidad",
+      "agente_causal": "Falla de germinación, daño por aves o vuelco",
+      "nivel_riesgo": "MEDIO",
+      "severidad_base": 0.35,
+      "recomendacion_mip": "Revisar nivelación láser del lote, lámina de riego y densidad de siembra en la zona descubierta."
+    },
+    "piricularia": {
+      "nombre_comun": "Piricularia / Añublo del Arroz",
+      "agente_causal": "Pyricularia oryzae (Magnaporthe oryzae)",
+      "nivel_riesgo": "CRITICO",
+      "severidad_base": 0.95,
+      "recomendacion_mip": "Alerta prioritaria: mantener lámina de agua estable y aplicar fungicida específico (ej. Triciclazol/Isoprotiolano) según umbral ICA."
+    },
+    "anublo_bacteriano_hoja": {
+      "nombre_comun": "Añublo Bacteriano del Arroz",
+      "agente_causal": "Xanthomonas oryzae pv. oryzae",
+      "nivel_riesgo": "CRITICO",
+      "severidad_base": 0.9,
+      "recomendacion_mip": "Evitar exceso de fertilización nitrogenada, desinfectar herramientas y aislar el foco de riego para frenar dispersión."
+    },
+    "raya_bacteriana_hoja": {
+      "nombre_comun": "Raya Bacteriana de la Hoja",
+      "agente_causal": "Xanthomonas oryzae pv. oryzicola",
+      "nivel_riesgo": "ALTO",
+      "severidad_base": 0.76,
+      "recomendacion_mip": "Reducir humedad excesiva en el dosel, emplear semilla certificada y monitorear lotes vecinos."
+    },
+    "anublo_bacteriano_panicula": {
+      "nombre_comun": "Añublo Bacteriano de la Panícula",
+      "agente_causal": "Burkholderia glumae",
+      "nivel_riesgo": "CRITICO",
+      "severidad_base": 0.91,
+      "recomendacion_mip": "Vigilancia prioritaria en floración ante altas temperaturas nocturnas; manejo preventivo según guía Fedearroz/ICA."
+    },
+    "mancha_parda": {
+      "nombre_comun": "Mancha Parda (Helmintosporiosis)",
+      "agente_causal": "Bipolaris oryzae",
+      "nivel_riesgo": "ALTO",
+      "severidad_base": 0.75,
+      "recomendacion_mip": "Asociado a suelos con deficiencia de potasio o silicio; corregir nutrición edáfica y tratar focos severos."
+    },
+    "virosis_tungro": {
+      "nombre_comun": "Virosis Complejo Tungro / Hoja Blanca",
+      "agente_causal": "Complejo viral transmitido por cicadélidos/delfácidos",
+      "nivel_riesgo": "CRITICO",
+      "severidad_base": 0.92,
+      "recomendacion_mip": "Monitorear población de vectores con red entomológica (10 pases dobles) y eliminar plantas reservorio."
+    },
+    "escaldado_carbon_hoja": {
+      "nombre_comun": "Escaldado Foliar / Carbón de la Hoja",
+      "agente_causal": "Microdochium oryzae / Entyloma oryzae",
+      "nivel_riesgo": "MEDIO",
+      "severidad_base": 0.65,
+      "recomendacion_mip": "Controlar malezas hospederas en caballones y evitar densidades de siembra excesivas."
+    },
+    "dano_barrenador_tallo": {
+      "nombre_comun": "Daño por Barrenador (Corazón Muerto / Panícula Blanca)",
+      "agente_causal": "Diatraea saccharalis / Rupela albinella",
+      "nivel_riesgo": "ALTO",
+      "severidad_base": 0.85,
+      "recomendacion_mip": "Liberación biológica de Trichogramma exiguum o Telenomus rowani y destrucción de socas post-cosecha."
+    },
+    "dano_insecto_foliar": {
+      "nombre_comun": "Daño por Insectos Defoliadores / Enrolladores",
+      "agente_causal": "Cnaphalocrocis medinalis / Dicladispa armigera / Spodoptera",
+      "nivel_riesgo": "ALTO",
+      "severidad_base": 0.74,
+      "recomendacion_mip": "Evaluar porcentaje de área foliar afectada; priorizar control biológico (Bacillus thuringiensis) sobre umbral económico."
+    },
+    "barrenador_tallo": {
+      "nombre_comun": "Barrenador del Tallo (Corazón Muerto / Panícula Blanca)",
+      "agente_causal": "Diatraea saccharalis / Rupela albinella",
+      "nivel_riesgo": "ALTO",
+      "severidad_base": 0.85,
+      "recomendacion_mip": "Liberación biológica de Trichogramma exiguum o Telenomus rowani y destrucción de socas post-cosecha."
+    }
+  },
+  "disclaimer": "AVISO AGRONOMICO: PlagIA es una plataforma empresarial de soporte a la decisión para Manejo Integrado de Plagas (MIP) en arroz. Ninguna alerta automatizada sustituye el concepto técnico ni la prescripción de un Ingeniero Agrónomo con matrícula profesional vigente conforme a las regulaciones del ICA."
+}

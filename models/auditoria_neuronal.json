@@ -1,0 +1,55 @@
+{
+  "dispositivo_entrenamiento": "cuda",
+  "modelo_dron_4_clases": {
+    "run_id": "4b856a1db268443aab0628d7b3580839",
+    "metricas_validacion": {
+      "accuracy": 0.8823529411764706,
+      "precision_macro": 0.8846729996346365,
+      "recall_macro": 0.8759375,
+      "f1_macro": 0.8786755516674998,
+      "f1_weighted": 0.8826392193669584,
+      "roc_auc_ovr": 0.9734761055627458,
+      "val_loss": 0.29201240574612336
+    },
+    "auditoria_neuronal": {
+      "neuronas_saludables": true,
+      "total_neuronas_ocultas": 256,
+      "neuronas_muertas": 0,
+      "ratio_neuronas_activas": 1.0,
+      "hay_nan_o_inf": false,
+      "grad_norm_capa_oculta": 0.776352,
+      "grad_norm_capa_salida": 0.843776,
+      "clases_predichas_unicas": 4,
+      "exactitud_lote_evaluado": 0.9375
+    },
+    "onnx_fp32_mb": 16.551,
+    "onnx_int8_mb": 4.51,
+    "factor_compresion": 3.67
+  },
+  "modelo_campo_hoja_10_clases": {
+    "run_id": "d47f37c2e89c484a81fb6cf99b6b1dba",
+    "metricas_validacion": {
+      "accuracy": 0.6107784431137725,
+      "precision_macro": 0.6532535142203335,
+      "recall_macro": 0.6286999147485081,
+      "f1_macro": 0.5904680112395855,
+      "f1_weighted": 0.5879837113409164,
+      "roc_auc_ovr": 0.9345666398823109,
+      "val_loss": 1.1709234157722153
+    },
+    "auditoria_neuronal": {
+      "neuronas_saludables": true,
+      "total_neuronas_ocultas": 256,
+      "neuronas_muertas": 0,
+      "ratio_neuronas_activas": 1.0,
+      "hay_nan_o_inf": false,
+      "grad_norm_capa_oculta": 3.358389,
+      "grad_norm_capa_salida": 4.366833,
+      "clases_predichas_unicas": 7,
+      "exactitud_lote_evaluado": 0.6875
+    },
+    "onnx_fp32_mb": 16.557,
+    "onnx_int8_mb": 4.512,
+    "factor_compresion": 3.67
+  }
+}

@@ -1,0 +1,47 @@
+# Entornos virtuales y paquetes
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Variables de entorno privadas
+.env
+
+# Datasets de imagenes y manifiestos pesados (se conserva reporte de curaduria)
+dataset/*
+!dataset/reporte_curaduria.json
+ml_engine/data/manifest*.csv
+ml_engine/data/manifiesto*.csv
+artifacts/
+storage_local/
+
+# MLflow y Bases de Datos Locales
+mlruns/
+mlartifacts/
+*.db
+*.sqlite
+*.sqlite3
+
+# Modelos entrenados pesados (se conservan modelos INT8 ligeros de 4.5 MB y metadatos JSON)
+models/*.pth
+models/*.pt
+models/*.keras
+models/*.h5
+models/*_fp32.onnx
+!models/plagia_mobile_int8.onnx
+!models/plagia_campo_hoja_int8.onnx
+!models/*.json
+
+# Flutter / Android Studio build artifacts
+mobile_app/.dart_tool/
+mobile_app/build/
+mobile_app/.flutter-plugins
+mobile_app/.flutter-plugins-dependencies
+mobile_app/android/.gradle/
+mobile_app/android/local.properties
+*.apk
+*.aab
