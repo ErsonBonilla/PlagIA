@@ -84,9 +84,16 @@ class ClasificadorCNNPlagIA(nn.Module):
             base.classifier = nn.Identity()
             self.backbone = base
             self._configurar_gradiente_efficientnet(fine_tune)
+        elif self.backbone_name in {"mobilenet_v2", "mobilenet"}:
+            pesos = models.MobileNet_V2_Weights.IMAGENET1K_V2 if pretrained else None
+            base = models.mobilenet_v2(weights=pesos)
+            caracteristicas_entrada = base.classifier[1].in_features
+            base.classifier = nn.Identity()
+            self.backbone = base
+            self._configurar_gradiente_mobilenet(fine_tune)
         else:
             raise ValueError(
-                f"Arquitectura base no soportada: {backbone_name}. Usa 'resnet50' o 'efficientnet_b0'."
+                f"Arquitectura base no soportada: {backbone_name}. Usa 'resnet50', 'efficientnet_b0' o 'mobilenet_v2'."
             )
 
         self.head = nn.Sequential(
@@ -123,6 +130,14 @@ class ClasificadorCNNPlagIA(nn.Module):
         if descongelar_capas_superiores:
             for nombre, param in self.backbone.named_parameters():
                 if any(nombre.startswith(f"features.{idx}") for idx in (5, 6, 7, 8)):
+                    param.requires_grad = True
+
+    def _configurar_gradiente_mobilenet(self, descongelar_capas_superiores: bool) -> None:
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+        if descongelar_capas_superiores:
+            for nombre, param in self.backbone.named_parameters():
+                if any(nombre.startswith(f"features.{idx}") for idx in range(14, 19)):
                     param.requires_grad = True
 
     def train(self, mode: bool = True) -> ClasificadorCNNPlagIA:

@@ -37,11 +37,11 @@ models/*_fp32.onnx
 !models/*.json
 
 # Flutter / Android Studio build artifacts
-mobile_app/.dart_tool/
-mobile_app/build/
-mobile_app/.flutter-plugins
-mobile_app/.flutter-plugins-dependencies
-mobile_app/android/.gradle/
-mobile_app/android/local.properties
+mobile_flutter/.dart_tool/
+mobile_flutter/build/
+mobile_flutter/.flutter-plugins
+mobile_flutter/.flutter-plugins-dependencies
+mobile_flutter/android/.gradle/
+mobile_flutter/android/local.properties
 *.apk
 *.aab

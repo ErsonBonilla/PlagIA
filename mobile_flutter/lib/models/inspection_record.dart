@@ -2,7 +2,7 @@
 ///
 /// Aplica la Regla de Oro:
 /// - Propiedades internas de negocio en español.
-/// - Claves del contrato JSON en `toSyncJson()` conservadas en inglés para `/api/v1/sync/batch`.
+/// - Claves del contrato JSON en `toSyncJson()` conservadas en inglés para `/api/v1/sync`.
 class RegistroInspeccion {
   final String idRegistroCliente;
   final String idLote;
@@ -17,6 +17,7 @@ class RegistroInspeccion {
   final double longitud;
   final DateTime capturadoEn;
   final String versionModelo;
+  final int latenciaMs;
   bool sincronizado;
 
   RegistroInspeccion({
@@ -33,10 +34,13 @@ class RegistroInspeccion {
     required this.longitud,
     required this.capturadoEn,
     required this.versionModelo,
+    this.latenciaMs = 38,
     this.sincronizado = false,
   });
 
-  /// Serializa al contrato JSON externo esperado por `POST /api/v1/sync/batch`.
+  bool get esFueraDeDominio => etiquetaEnfermedad == 'desconocido_no_arroz';
+
+  /// Serializa al contrato JSON externo esperado por `POST /api/v1/sync`.
   Map<String, dynamic> toSyncJson() {
     return {
       'client_record_id': idRegistroCliente,

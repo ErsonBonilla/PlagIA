@@ -48,6 +48,10 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
       'etiqueta': 'Plaga en Tallo: Barrenador (barrenador_tallo)',
     },
     {'clave': 'sano', 'etiqueta': 'Muestra Control: Dosel Arrocero Sano (sano)'},
+    {
+      'clave': 'desconocido_no_arroz',
+      'etiqueta': 'Control Rechazo: Objeto Fuera de Dominio (desconocido_no_arroz)',
+    },
   ];
 
   Future<void> _capturarYDiagnosticarOffline() async {
@@ -65,8 +69,10 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
       longitud: coords['longitud']!,
     );
 
-    widget.servicioSincronizacion.encolarRegistro(resultado);
-    widget.alAgregarRegistro();
+    if (!resultado.esFueraDeDominio) {
+      widget.servicioSincronizacion.encolarRegistro(resultado);
+      widget.alAgregarRegistro();
+    }
 
     if (!mounted) return;
     setState(() {
@@ -101,10 +107,8 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Ejecuta el reconocimiento fitosanitario directamente en el dispositivo móvil sin requerir cobertura celular en el lote.',
-                ),
+                const SizedBox(height: 12),
+                _construirGuiaVisualEncuadreFoliar(),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: _idLoteSeleccionado,
@@ -168,7 +172,7 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
                     label: Text(
                       _procesando
                           ? 'Procesando en Edge-AI...'
-                          : 'Capturar Hoja + Diagnosticar Offline',
+                          : 'Capturar Hoja + Diagnosticar Offline (<200 ms)',
                     ),
                   ),
                 ),
@@ -183,13 +187,67 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
     );
   }
 
+  Widget _construirGuiaVisualEncuadreFoliar() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF22C55E), width: 2),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.center_focus_strong, color: Color(0xFF4ADE80), size: 20),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Guía de Alineación Foliar (Distancia recomendada: 15-20 cm)',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            height: 76,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF4ADE80),
+                width: 1.5,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              '[ Encuadre aquí la lámina foliar de arroz paralela al sensor ]',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFFBBF7D0), fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _construirTarjetaDiagnostico(RegistroInspeccion registro) {
     final bool esSano = registro.etiquetaEnfermedad == 'sano';
-    final Color colorInsignia = esSano
-        ? const Color(0xFF2E7D32)
-        : (registro.nivelRiesgo == 'CRITICO'
-              ? const Color(0xFFC62828)
-              : const Color(0xFFEF6C00));
+    final bool fueraDominio = registro.esFueraDeDominio;
+    final Color colorInsignia = fueraDominio
+        ? const Color(0xFF475569)
+        : (esSano
+              ? const Color(0xFF2E7D32)
+              : (registro.nivelRiesgo == 'CRITICO'
+                    ? const Color(0xFFC62828)
+                    : const Color(0xFFEF6C00)));
 
     return Card(
       elevation: 2,
@@ -198,7 +256,10 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -210,16 +271,17 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'RIESGO ${registro.nivelRiesgo}',
+                    fueraDominio
+                        ? 'RECHAZO FUERA DE DOMINIO'
+                        : 'RIESGO ${registro.nivelRiesgo}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                const Spacer(),
                 Text(
-                  'Confianza: ${(registro.confianza * 100).toStringAsFixed(1)}%',
+                  'Confianza: ${(registro.confianza * 100).toStringAsFixed(1)}% | Latencia: ${registro.latenciaMs} ms',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ],
@@ -250,11 +312,16 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
             Text(registro.recomendacionMip),
             const SizedBox(height: 8),
             Text(
-              'Estado de sincronización: ${registro.sincronizado ? "Sincronizado con PostgreSQL/PostGIS" : "En cola local SQLite (Pendiente)"}',
+              fueraDominio
+                  ? 'Registro descartado automáticamente: no se encola en SQLite por estar fuera de dominio.'
+                  : 'Estado de sincronización: ${registro.sincronizado ? "Sincronizado con PostgreSQL/PostGIS" : "En cola local SQLite (Pendiente)"}',
               style: TextStyle(
                 fontSize: 12,
-                color:
-                    registro.sincronizado ? Colors.green[800] : Colors.orange[900],
+                color: fueraDominio
+                    ? Colors.blueGrey[700]
+                    : (registro.sincronizado
+                          ? Colors.green[800]
+                          : Colors.orange[900]),
               ),
             ),
           ],

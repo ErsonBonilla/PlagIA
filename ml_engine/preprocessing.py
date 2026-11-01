@@ -169,6 +169,49 @@ def construir_cargadores_datos(
     return cargadores
 
 
+def evaluar_dominio_arroz_e_incertidumbre(
+    imagen_rgb: np.ndarray,
+    probabilidades: np.ndarray,
+    umbral_confianza_minima: float = 0.36,
+    umbral_varianza_minima: float = 4.0,
+) -> dict:
+    """Evalúa si la fotografía pertenece al dominio agrícola del arroz o debe rechazarse como 'desconocido_no_arroz'.
+
+    Rechaza fotografías fuera de dominio cuando:
+    1. La imagen carece de textura o varianza espectral (ej. imagen negra, blanca o sintética plana).
+    2. La confianza máxima del modelo es inferior al umbral mínimo y presenta alta entropía de Shannon.
+    """
+    desv_espectral = float(np.std(imagen_rgb.astype(np.float32)))
+    probs_seguras = np.clip(probabilidades.astype(np.float64), 1e-8, 1.0)
+    entropia = -float(np.sum(probs_seguras * np.log(probs_seguras)))
+    entropia_max = float(np.log(len(probs_seguras))) if len(probs_seguras) > 1 else 1.0
+    entropia_norm = round(entropia / max(entropia_max, 1e-6), 4)
+    confianza_max = float(np.max(probs_seguras))
+
+    if desv_espectral < umbral_varianza_minima:
+        return {
+            "fuera_de_dominio": True,
+            "motivo_rechazo": "Imagen sin textura espectral válida (varianza insuficiente).",
+            "entropia_normalizada": entropia_norm,
+            "desviacion_espectral": round(desv_espectral, 2),
+        }
+
+    if confianza_max < umbral_confianza_minima and entropia_norm > 0.88:
+        return {
+            "fuera_de_dominio": True,
+            "motivo_rechazo": "Alta incertidumbre del clasificador; la imagen no coincide con patrones de arroz.",
+            "entropia_normalizada": entropia_norm,
+            "desviacion_espectral": round(desv_espectral, 2),
+        }
+
+    return {
+        "fuera_de_dominio": False,
+        "motivo_rechazo": None,
+        "entropia_normalizada": entropia_norm,
+        "desviacion_espectral": round(desv_espectral, 2),
+    }
+
+
 # Alias de compatibilidad
 PlagIADataset = DatasetFitosanitarioPlagIA
 apply_clahe_radiometric_correction = aplicar_correccion_radiometrica_clahe

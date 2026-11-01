@@ -29,7 +29,11 @@ from ml_engine.config import (
     normalizar_etiqueta_espanol,
 )
 from ml_engine.exporter import asegurar_artefactos_por_defecto
-from ml_engine.preprocessing import cargar_y_preparar_imagen, preprocesar_para_inferencia
+from ml_engine.preprocessing import (
+    cargar_y_preparar_imagen,
+    evaluar_dominio_arroz_e_incertidumbre,
+    preprocesar_para_inferencia,
+)
 
 
 def _softmax(logits: np.ndarray) -> np.ndarray:
@@ -117,24 +121,37 @@ class ServicioInferenciaEmpresarial:
         assert sesion_activa is not None
 
         t0 = time.perf_counter()
-        img_rgb = cargar_y_preparar_imagen(image_source, aplicar_clahe=True)
+        img_rgb_cruda = cargar_y_preparar_imagen(image_source, aplicar_clahe=False)
+        img_rgb = cargar_y_preparar_imagen(img_rgb_cruda, aplicar_clahe=True)
         entrada_x = preprocesar_para_inferencia(img_rgb, aplicar_clahe=False)
 
         nombre_entrada = sesion_activa.get_inputs()[0].name
         logits = sesion_activa.run(None, {nombre_entrada: entrada_x})[0]
         probs = _softmax(logits)[0]
 
-        idx_pred = int(np.argmax(probs))
-        etiqueta_pred = normalizar_etiqueta_espanol(clases_activas[idx_pred])
-        confianza = float(probs[idx_pred])
+        chequeo_dominio = evaluar_dominio_arroz_e_incertidumbre(img_rgb_cruda, probs)
+        if chequeo_dominio["fuera_de_dominio"]:
+            etiqueta_pred = "desconocido_no_arroz"
+            confianza = round(1.0 - float(chequeo_dominio["entropia_normalizada"]), 4)
+        else:
+            idx_pred = int(np.argmax(probs))
+            etiqueta_pred = normalizar_etiqueta_espanol(clases_activas[idx_pred])
+            confianza = float(probs[idx_pred])
 
         info_kb = CATALOGO_AGRONOMICO.get(etiqueta_pred, CATALOGO_AGRONOMICO["sano"])
         sev_base = float(info_kb["severidad_base"])
         indice_severidad = round(
-            sev_base * confianza if etiqueta_pred != "sano" else 0.05 * (1.0 - confianza), 4
+            sev_base * confianza
+            if etiqueta_pred not in {"sano", "desconocido_no_arroz"}
+            else (0.0 if etiqueta_pred == "desconocido_no_arroz" else 0.05 * (1.0 - confianza)),
+            4,
         )
 
-        cajas = self.detector_yolo.localizar_lesiones(img_rgb, predicted_class=etiqueta_pred)
+        cajas = (
+            []
+            if etiqueta_pred == "desconocido_no_arroz"
+            else self.detector_yolo.localizar_lesiones(img_rgb, predicted_class=etiqueta_pred)
+        )
         tiempo_ms = round((time.perf_counter() - t0) * 1000.0, 2)
 
         mapa_probabilidades = {

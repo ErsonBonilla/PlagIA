@@ -54,7 +54,7 @@ DIR_ALMACENAMIENTO_LOCAL = Path(
     os.environ.get("PLAGIA_STORAGE_LOCAL_DIR", str(RAIZ_PROYECTO / "storage_local"))
 )
 STORAGE_LOCAL_DIR = DIR_ALMACENAMIENTO_LOCAL
-DIR_ASSETS_MOVIL = RAIZ_PROYECTO / "mobile_app" / "assets" / "models"
+DIR_ASSETS_MOVIL = RAIZ_PROYECTO / "mobile_flutter" / "assets" / "models"
 MOBILE_ASSETS_DIR = DIR_ASSETS_MOVIL
 
 DIR_MANIFIESTOS = RAIZ_PROYECTO / "ml_engine" / "data"
@@ -168,6 +168,8 @@ MAPEO_ETIQUETAS_A_ESPANOL: dict[str, str] = {
     "stem_borer_damage": "dano_barrenador_tallo",
     "stem_borer": "barrenador_tallo",
     "foliar_insect_damage": "dano_insecto_foliar",
+    "unknown": "desconocido_no_arroz",
+    "out_of_domain": "desconocido_no_arroz",
 }
 
 
@@ -275,6 +277,13 @@ CATALOGO_AGRONOMICO: dict[str, dict] = {
         "nivel_riesgo": "ALTO",
         "severidad_base": 0.74,
         "recomendacion_mip": "Evaluar porcentaje de área foliar afectada; priorizar control biológico (Bacillus thuringiensis) sobre umbral económico.",
+    },
+    "desconocido_no_arroz": {
+        "nombre_comun": "Desconocido / Fuera de Dominio (No-Arroz)",
+        "agente_causal": "Imagen fuera de dominio o baja confianza espectral",
+        "nivel_riesgo": "NO_APLICA",
+        "severidad_base": 0.0,
+        "recomendacion_mip": "La fotografía no corresponde a tejido foliar ni dosel de arroz con nitidez suficiente. Encuadre la hoja dentro de las guías visuales a 15-20 cm con luz natural.",
     },
 }
 AGRONOMIC_KNOWLEDGE_BASE = CATALOGO_AGRONOMICO

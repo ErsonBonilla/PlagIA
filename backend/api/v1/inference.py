@@ -42,6 +42,7 @@ TIPOS_IMAGEN_PERMITIDOS = {
 }
 
 
+@router.post("/online", response_model=RespuestaPrediccionCampo)
 @router.post("/mobile", response_model=RespuestaPrediccionCampo)
 async def predecir_imagen_movil_campo(
     file: UploadFile = File(

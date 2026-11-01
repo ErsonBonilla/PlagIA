@@ -20,6 +20,7 @@ from backend.schemas.api_schemas import RespuestaToken, SolicitudToken
 router = APIRouter(prefix="/auth", tags=["Seguridad y Roles"])
 
 
+@router.post("/login", response_model=RespuestaToken)
 @router.post("/token", response_model=RespuestaToken)
 def iniciar_sesion_para_token(carga: SolicitudToken):
     usuario = autenticar_usuario(carga.username, carga.password)

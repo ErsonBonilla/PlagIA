@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.v1 import auth, farms, geospatial, inference, sync
+from backend.api.v1 import auth, drones, farms, geospatial, inference, maps, sync
 from backend.core.config import configuracion
 from backend.core.database import (
     inicializar_bd_y_sembrar_lotes_tolima,
@@ -80,5 +80,7 @@ def verificar_salud_sistema():
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(farms.router, prefix="/api/v1")
 app.include_router(inference.router, prefix="/api/v1")
+app.include_router(drones.router, prefix="/api/v1")
 app.include_router(sync.router, prefix="/api/v1")
 app.include_router(geospatial.router, prefix="/api/v1")
+app.include_router(maps.router, prefix="/api/v1")

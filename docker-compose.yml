@@ -130,6 +130,20 @@ services:
               count: all
               capabilities: [gpu]
 
+  web_fresh:
+    build:
+      context: ./web_fresh
+      dockerfile: Dockerfile
+    container_name: plagia-web-fresh
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      PLAGIA_API_URL: http://api:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
 volumes:
   postgis_data:
   redis_data:

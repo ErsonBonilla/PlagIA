@@ -1,0 +1,14 @@
+{
+  "name": "@plagia/web-fresh",
+  "version": "1.0.0",
+  "exports": "./main.ts",
+  "tasks": {
+    "start": "deno run -A main.ts",
+    "dev": "deno run -A --watch main.ts",
+    "check": "deno check main.ts tests/portal_test.ts",
+    "test": "deno test -A tests/portal_test.ts"
+  },
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext", "deno.ns"]
+  }
+}

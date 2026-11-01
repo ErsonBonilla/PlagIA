@@ -134,6 +134,12 @@ def test_clasificador_pytorch_y_exportacion_onnx_movil():
     entrenables_afinado = sum(p.numel() for p in modelo_afinado.parameters() if p.requires_grad)
     assert entrenables_afinado > entrenables_congelado
 
+    # Verificar soporte de MobileNetV2 para el borde móvil
+    modelo_mobilenet = construir_clasificador_pytorch(
+        backbone_name="mobilenet_v2", num_classes=4, fine_tune=True, pretrained=False
+    )
+    assert sum(p.numel() for p in modelo_mobilenet.parameters() if p.requires_grad) > 0
+
     meta = asegurar_artefactos_por_defecto()
     assert RUTA_MODELO_ONNX_SERVIDOR.exists()
     assert RUTA_MODELO_ONNX_MOVIL.exists()
@@ -214,9 +220,9 @@ def test_endpoints_fastapi_empresarial():
         assert datos_salud["status"] == "ok"
         assert datos_salud["model_loaded"] is True
 
-        # 2. Autenticación JWT
+        # 2. Autenticación JWT (/api/v1/auth/login y /api/v1/auth/token)
         r_auth = cliente.post(
-            "/api/v1/auth/token",
+            "/api/v1/auth/login",
             json={"username": "agronomo@plagia.co", "password": "PlagIA2026*"},
         )
         assert r_auth.status_code == 200
@@ -230,10 +236,10 @@ def test_endpoints_fastapi_empresarial():
         assert len(lotes) >= 2
         assert lotes[0]["id"] == "LOTE-ESPINAL-01"
 
-        # 4. Inferencia móvil en terreno (etiquetas en español)
+        # 4. Inferencia en línea (/api/v1/inference/online) y control fuera de dominio
         bytes_jpg = _crear_bytes_jpeg_prueba()
         r_pred = cliente.post(
-            "/api/v1/inference/mobile",
+            "/api/v1/inference/online",
             files={"file": ("hoja_arroz.jpg", io.BytesIO(bytes_jpg), "image/jpeg")},
             data={"lot_id": "LOTE-ESPINAL-01", "latitude": "4.1486", "longitude": "-74.8830"},
         )
@@ -247,11 +253,22 @@ def test_endpoints_fastapi_empresarial():
         }
         assert "AVISO AGRONOMICO" in datos_pred["disclaimer"]
 
-        # 5. Sincronización por lotes Offline-First (Flutter -> FastAPI)
+        # Imagen negra plana -> debe ser rechazada como 'desconocido_no_arroz'
+        img_plana = np.zeros((224, 224, 3), dtype=np.uint8)
+        _, jpg_plano = cv2.imencode(".jpg", img_plana)
+        r_fuera = cliente.post(
+            "/api/v1/inference/online",
+            files={"file": ("no_arroz.jpg", io.BytesIO(jpg_plano.tobytes()), "image/jpeg")},
+            data={"lot_id": "LOTE-ESPINAL-01"},
+        )
+        assert r_fuera.status_code == 200
+        assert r_fuera.json()["disease_label"] == "desconocido_no_arroz"
+
+        # 5. Sincronización asíncrona (/api/v1/sync)
         r_sync = cliente.post(
-            "/api/v1/sync/batch",
+            "/api/v1/sync",
             json={
-                "device_id": "ANDROID-TOLIMA-FIELD-01",
+                "device_id": "ANDROID-TOLIMA-CAMPO-01",
                 "records": [
                     {
                         "client_record_id": "PRUEBA-OFFLINE-001",
@@ -270,9 +287,9 @@ def test_endpoints_fastapi_empresarial():
         assert datos_sync["received_count"] == 1
         assert "PRUEBA-OFFLINE-001" in datos_sync["synced_ids"]
 
-        # 6. Procesamiento de Ortomosaico de Dron + Mapa de Calor GeoJSON
+        # 6. Carga de Ortomosaico de Dron (/api/v1/drones/upload)
         r_orto = cliente.post(
-            "/api/v1/inference/orthomosaic",
+            "/api/v1/drones/upload",
             files={"file": ("vuelo_dron.jpg", io.BytesIO(bytes_jpg), "image/jpeg")},
             data={"lot_id": "LOTE-ESPINAL-01"},
         )
@@ -281,8 +298,8 @@ def test_endpoints_fastapi_empresarial():
         assert datos_orto["status"] == "COMPLETADO"
         assert datos_orto["total_patches"] >= 4
 
-        # 7. Consulta del Mapa de Calor GeoJSON (RFC 7946)
-        r_calor = cliente.get("/api/v1/geospatial/heatmap/LOTE-ESPINAL-01")
+        # 7. Consulta del Mapa de Calor GeoJSON (/api/v1/maps/heatmap/{farm_id})
+        r_calor = cliente.get("/api/v1/maps/heatmap/FINCA-TOL-01")
         assert r_calor.status_code == 200
         datos_calor = r_calor.json()
         assert datos_calor["geojson"]["type"] == "FeatureCollection"

@@ -25,6 +25,7 @@ from ml_engine.exporter import asegurar_artefactos_por_defecto
 router = APIRouter(prefix="/sync", tags=["Sincronización Offline-First (Flutter Edge-AI)"])
 
 
+@router.post("", response_model=RespuestaSincronizacionLoteOffline)
 @router.post("/batch", response_model=RespuestaSincronizacionLoteOffline)
 def sincronizar_lote_registros_offline(
     carga: SolicitudSincronizacionLoteOffline,
