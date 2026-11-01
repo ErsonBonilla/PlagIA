@@ -5,49 +5,49 @@ import '../services/edge_inference_service.dart';
 import '../services/gps_service.dart';
 import '../services/offline_sync_service.dart';
 
-class FieldScannerScreen extends StatefulWidget {
-  final EdgeInferenceService edgeService;
-  final GpsService gpsService;
-  final OfflineSyncService syncService;
-  final VoidCallback onRecordAdded;
+class PantallaEscanerCampo extends StatefulWidget {
+  final ServicioInferenciaBorde servicioBorde;
+  final ServicioGps servicioGps;
+  final ServicioSincronizacionOffline servicioSincronizacion;
+  final VoidCallback alAgregarRegistro;
 
-  const FieldScannerScreen({
+  const PantallaEscanerCampo({
     super.key,
-    required this.edgeService,
-    required this.gpsService,
-    required this.syncService,
-    required this.onRecordAdded,
+    required this.servicioBorde,
+    required this.servicioGps,
+    required this.servicioSincronizacion,
+    required this.alAgregarRegistro,
   });
 
   @override
-  State<FieldScannerScreen> createState() => _FieldScannerScreenState();
+  State<PantallaEscanerCampo> createState() => _EstadoPantallaEscanerCampo();
 }
 
-class _FieldScannerScreenState extends State<FieldScannerScreen> {
-  String _idLoteSeleccionado = AppConfig.tolimaLots.first['id'] as String;
+class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
+  String _idLoteSeleccionado = ConfiguracionApp.lotesTolima.first['id'] as String;
   String _muestraSeleccionada = 'roya_parda';
-  InspectionRecord? _ultimoDiagnostico;
+  RegistroInspeccion? _ultimoDiagnostico;
   bool _procesando = false;
 
   static const List<Map<String, String>> _opcionesMuestra = [
-    {'key': 'roya_parda', 'label': 'Muestra Foliar: Roya Parda (roya_parda)'},
+    {'clave': 'roya_parda', 'etiqueta': 'Muestra Foliar: Roya Parda (roya_parda)'},
     {
-      'key': 'roya_amarilla',
-      'label': 'Muestra Foliar: Roya Amarilla (roya_amarilla)',
+      'clave': 'roya_amarilla',
+      'etiqueta': 'Muestra Foliar: Roya Amarilla (roya_amarilla)',
     },
     {
-      'key': 'piricularia',
-      'label': 'Muestra Foliar: Piricularia (piricularia)',
+      'clave': 'piricularia',
+      'etiqueta': 'Muestra Foliar: Piricularia (piricularia)',
     },
     {
-      'key': 'anublo_bacteriano_hoja',
-      'label': 'Muestra Foliar: Añublo Bacteriano (anublo_bacteriano_hoja)',
+      'clave': 'anublo_bacteriano_hoja',
+      'etiqueta': 'Muestra Foliar: Añublo Bacteriano (anublo_bacteriano_hoja)',
     },
     {
-      'key': 'barrenador_tallo',
-      'label': 'Plaga en Tallo: Barrenador (barrenador_tallo)',
+      'clave': 'barrenador_tallo',
+      'etiqueta': 'Plaga en Tallo: Barrenador (barrenador_tallo)',
     },
-    {'key': 'sano', 'label': 'Muestra Control: Dosel Arrocero Sano (sano)'},
+    {'clave': 'sano', 'etiqueta': 'Muestra Control: Dosel Arrocero Sano (sano)'},
   ];
 
   Future<void> _capturarYDiagnosticarOffline() async {
@@ -55,18 +55,18 @@ class _FieldScannerScreenState extends State<FieldScannerScreen> {
       _procesando = true;
     });
 
-    final coords = widget.gpsService.captureCurrentLotCoordinates(
+    final coords = widget.servicioGps.capturarCoordenadasLoteActual(
       _idLoteSeleccionado,
     );
-    final resultado = await widget.edgeService.runLocalEdgeDiagnosis(
-      sampleKey: _muestraSeleccionada,
-      lotId: _idLoteSeleccionado,
-      latitude: coords['latitude']!,
-      longitude: coords['longitude']!,
+    final resultado = await widget.servicioBorde.ejecutarDiagnosticoLocalBorde(
+      claveMuestra: _muestraSeleccionada,
+      idLote: _idLoteSeleccionado,
+      latitud: coords['latitud']!,
+      longitud: coords['longitud']!,
     );
 
-    widget.syncService.enqueueRecord(resultado);
-    widget.onRecordAdded();
+    widget.servicioSincronizacion.encolarRegistro(resultado);
+    widget.alAgregarRegistro();
 
     if (!mounted) return;
     setState(() {
@@ -113,21 +113,21 @@ class _FieldScannerScreenState extends State<FieldScannerScreen> {
                     labelText: 'Lote Arrocero (Tolima)',
                     border: OutlineInputBorder(),
                   ),
-                  items: AppConfig.tolimaLots
+                  items: ConfiguracionApp.lotesTolima
                       .map(
-                        (lot) => DropdownMenuItem<String>(
-                          value: lot['id'] as String,
+                        (lote) => DropdownMenuItem<String>(
+                          value: lote['id'] as String,
                           child: Text(
-                            lot['name'] as String,
+                            lote['nombre'] as String,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       )
                       .toList(),
-                  onChanged: (val) {
-                    if (val != null) {
+                  onChanged: (valor) {
+                    if (valor != null) {
                       setState(() {
-                        _idLoteSeleccionado = val;
+                        _idLoteSeleccionado = valor;
                       });
                     }
                   },
@@ -143,18 +143,18 @@ class _FieldScannerScreenState extends State<FieldScannerScreen> {
                   items: _opcionesMuestra
                       .map(
                         (item) => DropdownMenuItem<String>(
-                          value: item['key'],
+                          value: item['clave'],
                           child: Text(
-                            item['label']!,
+                            item['etiqueta']!,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       )
                       .toList(),
-                  onChanged: (val) {
-                    if (val != null) {
+                  onChanged: (valor) {
+                    if (valor != null) {
                       setState(() {
-                        _muestraSeleccionada = val;
+                        _muestraSeleccionada = valor;
                       });
                     }
                   },
@@ -177,16 +177,17 @@ class _FieldScannerScreenState extends State<FieldScannerScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        if (_ultimoDiagnostico != null) _construirTarjetaDiagnostico(_ultimoDiagnostico!),
+        if (_ultimoDiagnostico != null)
+          _construirTarjetaDiagnostico(_ultimoDiagnostico!),
       ],
     );
   }
 
-  Widget _construirTarjetaDiagnostico(InspectionRecord registro) {
-    final bool esSano = registro.diseaseLabel == 'sano';
+  Widget _construirTarjetaDiagnostico(RegistroInspeccion registro) {
+    final bool esSano = registro.etiquetaEnfermedad == 'sano';
     final Color colorInsignia = esSano
         ? const Color(0xFF2E7D32)
-        : (registro.riskLevel == 'CRITICO'
+        : (registro.nivelRiesgo == 'CRITICO'
               ? const Color(0xFFC62828)
               : const Color(0xFFEF6C00));
 
@@ -209,7 +210,7 @@ class _FieldScannerScreenState extends State<FieldScannerScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'RIESGO ${registro.riskLevel}',
+                    'RIESGO ${registro.nivelRiesgo}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -218,41 +219,42 @@ class _FieldScannerScreenState extends State<FieldScannerScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  'Confianza: ${(registro.confidence * 100).toStringAsFixed(1)}%',
+                  'Confianza: ${(registro.confianza * 100).toStringAsFixed(1)}%',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             Text(
-              '${registro.commonName} (${registro.diseaseLabel})',
+              '${registro.nombreComun} (${registro.etiquetaEnfermedad})',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
-              'Agente causal: ${registro.causalAgent}',
+              'Agente causal: ${registro.agenteCausal}',
               style: const TextStyle(fontStyle: FontStyle.italic),
             ),
             const Divider(height: 20),
             Text(
-              'Coordenadas GPS (Offline): ${registro.latitude}, ${registro.longitude}',
+              'Coordenadas GPS (Offline): ${registro.latitud}, ${registro.longitud}',
             ),
             Text(
-              'Índice de Severidad: ${registro.severityIndex.toStringAsFixed(2)} | Lote: ${registro.lotId}',
+              'Índice de Severidad: ${registro.indiceSeveridad.toStringAsFixed(2)} | Lote: ${registro.idLote}',
             ),
             const SizedBox(height: 10),
             const Text(
               'Recomendación MIP:',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text(registro.mipRecommendation),
+            Text(registro.recomendacionMip),
             const SizedBox(height: 8),
             Text(
-              'Estado de sincronización: ${registro.isSynced ? "Sincronizado con PostGIS" : "En cola local SQLite (Pendiente)"}',
+              'Estado de sincronización: ${registro.sincronizado ? "Sincronizado con PostgreSQL/PostGIS" : "En cola local SQLite (Pendiente)"}',
               style: TextStyle(
                 fontSize: 12,
-                color: registro.isSynced ? Colors.green[800] : Colors.orange[900],
+                color:
+                    registro.sincronizado ? Colors.green[800] : Colors.orange[900],
               ),
             ),
           ],
@@ -261,3 +263,5 @@ class _FieldScannerScreenState extends State<FieldScannerScreen> {
     );
   }
 }
+
+typedef FieldScannerScreen = PantallaEscanerCampo;

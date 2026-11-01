@@ -30,10 +30,10 @@ PlagIA/
 ├── pyproject.toml               # Definición de dependencias e índice oficial PyTorch CUDA (cu126)
 ├── Dockerfile                   # Imagen empresarial con uv + Python 3.12 + CUDA 12.6
 ├── docker-compose.yml           # Orquestación: api, celery_worker, redis, postgis, minio, mlflow
-├── dataset/                     # Repositorio de datasets multinivel (Dron + Paddy Doctor + Plagas)
+├── dataset/                     # Repositorio curado en 3 dominios (01_dron_dosel_cls, 02_campo_hoja_cls, 03_deteccion_plagas_yolo)
 ├── docs/
-│   ├── EXECUTIVE_SUMMARY.md     # Caso de negocio, ROI, auditoría de datos y gobernanza agronómica
-│   └── ARCHITECTURE.md          # Especificación de microservicios, PostGIS y protocolo Offline-First
+│   ├── RESUMEN_EJECUTIVO.md     # Caso de negocio, ROI, auditoría de datos y gobernanza agronómica
+│   └── ARQUITECTURA.md          # Especificación de microservicios, PostGIS y protocolo Offline-First
 ├── scripts/
 │   ├── wsl2_setup.sh            # Aprovisionamiento automático en WSL 2 (Ubuntu + uv + CUDA)
 │   ├── check_wsl2_cuda.py       # Diagnóstico de GPU RTX 3050, Tensor Cores AMP FP16 y ONNX Runtime

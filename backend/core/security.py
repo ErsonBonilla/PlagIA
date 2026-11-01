@@ -1,5 +1,10 @@
 """
 Seguridad Empresarial: Autenticación JWT y Control de Roles (Agrónomo, Operador VANT, Productor).
+
+Aplica la Regla de Oro:
+- Lógica interna, usuarios corporativos, roles y mensajes de error en español.
+- Claims estándar del protocolo RFC 7519 JWT (`sub`, `exp`, `iat`) e interfaz `HTTPBearer`
+  conservados en inglés.
 """
 
 from __future__ import annotations
@@ -11,84 +16,95 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from backend.core.config import settings
+from backend.core.config import configuracion
 
-bearer_scheme = HTTPBearer(auto_error=False)
-
-
-def _hash_password(raw: str) -> str:
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+esquema_portador = HTTPBearer(auto_error=False)
 
 
-ENTERPRISE_USERS_DB: dict[str, dict] = {
+def _cifrar_contrasena(texto_plano: str) -> str:
+    return hashlib.sha256(texto_plano.encode("utf-8")).hexdigest()
+
+
+BASE_USUARIOS_EMPRESARIAL: dict[str, dict] = {
     "agronomo@plagia.co": {
-        "username": "agronomo@plagia.co",
-        "full_name": "Ing. Agrónomo Comité Tolima",
-        "role": "AGRONOMO_SENIOR",
-        "district": "Usocoello - El Espinal",
-        "password_hash": _hash_password("PlagIA2026*"),
+        "usuario": "agronomo@plagia.co",
+        "nombre_completo": "Ing. Agrónomo Comité Tolima",
+        "rol": "AGRONOMO_SENIOR",
+        "distrito": "Usocoello - El Espinal",
+        "contrasena_hash": _cifrar_contrasena("PlagIA2026*"),
     },
     "dron@plagia.co": {
-        "username": "dron@plagia.co",
-        "full_name": "Operador VANT Fotogrametría",
-        "role": "OPERADOR_DRON",
-        "district": "Usosaldaña - Saldaña",
-        "password_hash": _hash_password("VantTolima2026*"),
+        "usuario": "dron@plagia.co",
+        "nombre_completo": "Operador VANT Fotogrametría",
+        "rol": "OPERADOR_DRON",
+        "distrito": "Usosaldaña - Saldaña",
+        "contrasena_hash": _cifrar_contrasena("VantTolima2026*"),
     },
     "productor@plagia.co": {
-        "username": "productor@plagia.co",
-        "full_name": "Productor Arrocero Meseta",
-        "role": "PRODUCTOR",
-        "district": "Meseta de Ibagué",
-        "password_hash": _hash_password("ArrozTolima2026*"),
+        "usuario": "productor@plagia.co",
+        "nombre_completo": "Productor Arrocero Meseta",
+        "rol": "PRODUCTOR",
+        "distrito": "Meseta de Ibagué",
+        "contrasena_hash": _cifrar_contrasena("ArrozTolima2026*"),
     },
 }
 
 
-def authenticate_user(username: str, password: str) -> dict | None:
-    user = ENTERPRISE_USERS_DB.get(username)
-    if not user:
+def autenticar_usuario(nombre_usuario: str, contrasena: str) -> dict | None:
+    registro = BASE_USUARIOS_EMPRESARIAL.get(nombre_usuario)
+    if not registro:
         return None
-    if user["password_hash"] != _hash_password(password):
+    if registro["contrasena_hash"] != _cifrar_contrasena(contrasena):
         return None
-    return user
+    return registro
 
 
-def create_access_token(subject: str, role: str, district: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
-    payload = {
-        "sub": subject,
-        "role": role,
-        "district": district,
-        "exp": expire,
+def crear_token_acceso(sujeto: str, rol: str, distrito: str) -> str:
+    expiracion = datetime.now(timezone.utc) + timedelta(
+        minutes=configuracion.access_token_expire_minutes
+    )
+    # Claims RFC 7519 (`sub`, `exp`, `iat`) requeridos por el protocolo JWT
+    carga_util = {
+        "sub": sujeto,
+        "role": rol,
+        "district": distrito,
+        "exp": expiracion,
         "iat": datetime.now(timezone.utc),
     }
-    return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
+    return jwt.encode(
+        carga_util, configuracion.secret_key, algorithm=configuracion.jwt_algorithm
+    )
 
 
-def get_optional_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+def obtener_usuario_actual_opcional(
+    credenciales: HTTPAuthorizationCredentials | None = Depends(esquema_portador),
 ) -> dict:
     """Valida el token JWT si se envía, o asigna contexto de operación rural autenticado por dispositivo."""
-    if credentials is None:
+    if credenciales is None:
         return {
-            "username": "field_device@plagia.co",
+            "username": "dispositivo_campo@plagia.co",
             "role": "DISPOSITIVO_CAMPO",
             "district": "Tolima",
         }
     try:
-        payload = jwt.decode(
-            credentials.credentials,
-            settings.secret_key,
-            algorithms=[settings.jwt_algorithm],
+        carga_util = jwt.decode(
+            credenciales.credentials,
+            configuracion.secret_key,
+            algorithms=[configuracion.jwt_algorithm],
         )
         return {
-            "username": payload.get("sub", "unknown"),
-            "role": payload.get("role", "AGRONOMO_SENIOR"),
-            "district": payload.get("district", "Tolima"),
+            "username": carga_util.get("sub", "desconocido"),
+            "role": carga_util.get("role", "AGRONOMO_SENIOR"),
+            "district": carga_util.get("district", "Tolima"),
         }
     except jwt.PyJWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Token JWT inválido o expirado: {exc}",
         ) from exc
+
+
+# Alias de compatibilidad
+authenticate_user = autenticar_usuario
+create_access_token = crear_token_acceso
+get_optional_current_user = obtener_usuario_actual_opcional

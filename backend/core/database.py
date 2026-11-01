@@ -1,10 +1,12 @@
 """
-Capa de Persistencia Geoespacial y Relacional Dual:
+Capa de Persistencia Geoespacial y Relacional Dual bajo la Regla de Oro:
 - Motor Principal: PostgreSQL 16 + PostGIS 3.4 (`postgresql+psycopg2://...`)
 - Motor de Respaldo Conveniente: SQLite (`sqlite:///.../plagia_enterprise.db`)
 
-Si el servidor PostgreSQL está disponible, opera sobre PostgreSQL + PostGIS;
-si no está accesible en desarrollo/campo local, conmuta automáticamente a SQLite.
+Todas las clases ORM, tablas (`fincas`, `lotes`, `detecciones_fitosanitarias`,
+`trabajos_ortomosaico`), columnas y estados internos (`PENDIENTE`, `PROCESANDO`,
+`COMPLETADO`) están en español. Los estándares espaciales OGC WKT (`POINT`, `POLYGON`)
+y RFC 7946 GeoJSON se conservan en inglés por protocolo.
 """
 
 from __future__ import annotations
@@ -25,26 +27,35 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
-from backend.core.config import settings
+from backend.core.config import configuracion
 from ml_engine.config import ZONAS_ARROCERAS_TOLIMA
 
 
 def construir_motor_bd_resiliente() -> tuple[Engine, str]:
     """Intenta conectar primero a PostgreSQL + PostGIS (principal) y hace failover limpio a SQLite."""
-    url_primaria = settings.database_url
+    import socket
+    from urllib.parse import urlparse
+
+    url_primaria = configuracion.database_url
     if url_primaria.startswith("postgresql"):
         try:
+            parsed = urlparse(url_primaria)
+            host_pg = parsed.hostname or "localhost"
+            puerto_pg = parsed.port or 5432
+            with socket.create_connection((host_pg, puerto_pg), timeout=0.4):
+                pass
+
             motor_pg = create_engine(
                 url_primaria,
-                connect_args={"connect_timeout": 2},
+                connect_args={"connect_timeout": 1},
                 pool_pre_ping=True,
                 future=True,
             )
-            with motor_pg.connect() as conn:
-                conn.execute(text("SELECT 1"))
+            with motor_pg.connect() as conexion:
+                conexion.execute(text("SELECT 1"))
                 try:
-                    conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
-                    conn.commit()
+                    conexion.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+                    conexion.commit()
                 except Exception:
                     pass
             return motor_pg, "PostgreSQL/PostGIS (Principal)"
@@ -52,7 +63,7 @@ def construir_motor_bd_resiliente() -> tuple[Engine, str]:
             pass
 
     url_sqlite = (
-        url_primaria if url_primaria.startswith("sqlite") else settings.sqlite_fallback_url
+        url_primaria if url_primaria.startswith("sqlite") else configuracion.sqlite_fallback_url
     )
     motor_sqlite = create_engine(
         url_sqlite,
@@ -62,116 +73,121 @@ def construir_motor_bd_resiliente() -> tuple[Engine, str]:
     return motor_sqlite, "SQLite (Respaldo Local Activo)"
 
 
-engine, ESTADO_MOTOR_BD = construir_motor_bd_resiliente()
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
+motor_bd, ESTADO_MOTOR_BD = construir_motor_bd_resiliente()
+SesionLocal = sessionmaker(
+    bind=motor_bd, autoflush=False, autocommit=False, expire_on_commit=False
+)
 
 
 def obtener_estado_motor_bd() -> str:
     return ESTADO_MOTOR_BD
 
 
-class Base(DeclarativeBase):
+class BaseORM(DeclarativeBase):
     pass
 
 
-class FarmORM(Base):
-    __tablename__ = "farms"
+class FincaORM(BaseORM):
+    __tablename__ = "fincas"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    name: Mapped[str] = mapped_column(String(160), nullable=False)
-    municipality: Mapped[str] = mapped_column(String(80), nullable=False)
-    irrigation_district: Mapped[str] = mapped_column(String(120), nullable=False)
-    owner_name: Mapped[str] = mapped_column(String(140), nullable=False)
-    total_area_ha: Mapped[float] = mapped_column(Float, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
+    nombre: Mapped[str] = mapped_column(String(160), nullable=False)
+    municipio: Mapped[str] = mapped_column(String(80), nullable=False)
+    distrito_riego: Mapped[str] = mapped_column(String(120), nullable=False)
+    propietario: Mapped[str] = mapped_column(String(140), nullable=False)
+    area_total_ha: Mapped[float] = mapped_column(Float, nullable=False)
+    creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
 
-class LotORM(Base):
-    __tablename__ = "lots"
+class LoteORM(BaseORM):
+    __tablename__ = "lotes"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    farm_id: Mapped[str] = mapped_column(String(64), ForeignKey("farms.id"), nullable=False)
-    name: Mapped[str] = mapped_column(String(140), nullable=False)
-    municipality: Mapped[str] = mapped_column(String(80), nullable=False)
-    rice_variety: Mapped[str] = mapped_column(String(80), nullable=False)
-    crop_age_days: Mapped[int] = mapped_column(Integer, default=55)
+    finca_id: Mapped[str] = mapped_column(String(64), ForeignKey("fincas.id"), nullable=False)
+    nombre: Mapped[str] = mapped_column(String(140), nullable=False)
+    municipio: Mapped[str] = mapped_column(String(80), nullable=False)
+    variedad_arroz: Mapped[str] = mapped_column(String(80), nullable=False)
+    edad_cultivo_dias: Mapped[int] = mapped_column(Integer, default=55)
     area_ha: Mapped[float] = mapped_column(Float, default=25.0)
-    center_lat: Mapped[float] = mapped_column(Float, nullable=False)
-    center_lon: Mapped[float] = mapped_column(Float, nullable=False)
-    polygon_wkt: Mapped[str] = mapped_column(Text, nullable=False)
-    polygon_geojson: Mapped[str] = mapped_column(Text, nullable=False)
+    latitud_centro: Mapped[float] = mapped_column(Float, nullable=False)
+    longitud_centro: Mapped[float] = mapped_column(Float, nullable=False)
+    poligono_wkt: Mapped[str] = mapped_column(Text, nullable=False)
+    poligono_geojson: Mapped[str] = mapped_column(Text, nullable=False)
 
 
-class PhytosanitaryDetectionORM(Base):
-    __tablename__ = "phytosanitary_detections"
+class DeteccionFitosanitariaORM(BaseORM):
+    __tablename__ = "detecciones_fitosanitarias"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    client_record_id: Mapped[str | None] = mapped_column(String(96), nullable=True, index=True)
-    lot_id: Mapped[str] = mapped_column(String(64), index=True)
-    source_type: Mapped[str] = mapped_column(String(40), default="MOVIL_EN_LINEA")
-    disease_label: Mapped[str] = mapped_column(String(64), nullable=False)
-    confidence: Mapped[float] = mapped_column(Float, nullable=False)
-    severity_index: Mapped[float] = mapped_column(Float, nullable=False)
-    latitude: Mapped[float] = mapped_column(Float, nullable=False)
-    longitude: Mapped[float] = mapped_column(Float, nullable=False)
-    point_wkt: Mapped[str] = mapped_column(String(120), nullable=False)
-    model_version: Mapped[str] = mapped_column(String(64), default="1.0.0-enterprise")
-    captured_at: Mapped[datetime] = mapped_column(
+    id_registro_cliente: Mapped[str | None] = mapped_column(String(96), nullable=True, index=True)
+    lote_id: Mapped[str] = mapped_column(String(64), index=True)
+    tipo_fuente: Mapped[str] = mapped_column(String(40), default="MOVIL_EN_LINEA")
+    etiqueta_enfermedad: Mapped[str] = mapped_column(String(64), nullable=False)
+    confianza: Mapped[float] = mapped_column(Float, nullable=False)
+    indice_severidad: Mapped[float] = mapped_column(Float, nullable=False)
+    latitud: Mapped[float] = mapped_column(Float, nullable=False)
+    longitud: Mapped[float] = mapped_column(Float, nullable=False)
+    punto_wkt: Mapped[str] = mapped_column(String(120), nullable=False)
+    version_modelo: Mapped[str] = mapped_column(String(64), default="1.0.0-enterprise")
+    capturado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
 
-class OrthomosaicJobORM(Base):
-    __tablename__ = "orthomosaic_jobs"
+class TrabajoOrtomosaicoORM(BaseORM):
+    __tablename__ = "trabajos_ortomosaico"
 
-    task_id: Mapped[str] = mapped_column(String(96), primary_key=True)
-    lot_id: Mapped[str] = mapped_column(String(64), index=True)
-    status: Mapped[str] = mapped_column(String(32), default="PENDING")
-    storage_object_key: Mapped[str] = mapped_column(String(255), default="")
-    total_patches: Mapped[int] = mapped_column(Integer, default=0)
-    infested_patches: Mapped[int] = mapped_column(Integer, default=0)
-    infection_rate: Mapped[float] = mapped_column(Float, default=0.0)
-    heatmap_geojson_path: Mapped[str] = mapped_column(String(255), default="")
-    heatmap_png_path: Mapped[str] = mapped_column(String(255), default="")
-    created_at: Mapped[datetime] = mapped_column(
+    id_tarea: Mapped[str] = mapped_column(String(96), primary_key=True)
+    lote_id: Mapped[str] = mapped_column(String(64), index=True)
+    estado: Mapped[str] = mapped_column(String(32), default="PENDIENTE")
+    clave_objeto_almacenamiento: Mapped[str] = mapped_column(String(255), default="")
+    total_parches: Mapped[int] = mapped_column(Integer, default=0)
+    parches_infestados: Mapped[int] = mapped_column(Integer, default=0)
+    tasa_infestacion: Mapped[float] = mapped_column(Float, default=0.0)
+    ruta_mapa_calor_geojson: Mapped[str] = mapped_column(String(255), default="")
+    ruta_mapa_calor_png: Mapped[str] = mapped_column(String(255), default="")
+    creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
 
-def init_db_and_seed_tolima_lots() -> None:
-    """Crea las tablas e inserta las fincas y lotes arroceros de referencia en el Tolima."""
-    Base.metadata.create_all(bind=engine)
-    with SessionLocal() as db:
-        if db.query(FarmORM).count() > 0:
+def inicializar_bd_y_sembrar_lotes_tolima() -> None:
+    """Crea las tablas en español e inserta las fincas y lotes arroceros de referencia en el Tolima."""
+    BaseORM.metadata.create_all(bind=motor_bd)
+    with SesionLocal() as sesion:
+        if sesion.query(FincaORM).count() > 0:
             return
 
-        farms = [
-            FarmORM(
+        fincas = [
+            FincaORM(
                 id="FINCA-TOL-01",
-                name="Hacienda Arrocera San Isidro",
-                municipality="El Espinal",
-                irrigation_district="Usocoello",
-                owner_name="Agroindustrial del Tolima S.A.S.",
-                total_area_ha=120.0,
+                nombre="Hacienda Arrocera San Isidro",
+                municipio="El Espinal",
+                distrito_riego="Usocoello",
+                propietario="Agroindustrial del Tolima S.A.S.",
+                area_total_ha=120.0,
             ),
-            FarmORM(
+            FincaORM(
                 id="FINCA-TOL-02",
-                name="Agrícola Las Palmas del Saldaña",
-                municipality="Saldaña",
-                irrigation_district="Usosaldaña",
-                owner_name="Inversiones Arroceras del Sur",
-                total_area_ha=95.0,
+                nombre="Agrícola Las Palmas del Saldaña",
+                municipio="Saldaña",
+                distrito_riego="Usosaldaña",
+                propietario="Inversiones Arroceras del Sur",
+                area_total_ha=95.0,
             ),
         ]
-        db.add_all(farms)
+        sesion.add_all(fincas)
 
-        espinal_bbox = ZONAS_ARROCERAS_TOLIMA["EL_ESPINAL"]["bbox"]
-        saldana_bbox = ZONAS_ARROCERAS_TOLIMA["SALDANA"]["bbox"]
+        caja_espinal = ZONAS_ARROCERAS_TOLIMA["EL_ESPINAL"]["bbox"]
+        caja_saldana = ZONAS_ARROCERAS_TOLIMA["SALDANA"]["bbox"]
 
-        def _bbox_to_wkt_and_geojson(bbox: tuple[float, float, float, float]) -> tuple[str, str]:
-            min_lon, min_lat, max_lon, max_lat = bbox
+        def _caja_a_wkt_y_geojson(
+            caja: tuple[float, float, float, float]
+        ) -> tuple[str, str]:
+            min_lon, min_lat, max_lon, max_lat = caja
+            # WKT y GeoJSON siguen los estándares internacionales OGC y RFC 7946
             wkt = (
                 f"POLYGON(({min_lon} {min_lat}, {max_lon} {min_lat}, "
                 f"{max_lon} {max_lat}, {min_lon} {max_lat}, {min_lon} {min_lat}))"
@@ -192,81 +208,93 @@ def init_db_and_seed_tolima_lots() -> None:
             )
             return wkt, geojson
 
-        wkt_1, geo_1 = _bbox_to_wkt_and_geojson(espinal_bbox)
-        wkt_2, geo_2 = _bbox_to_wkt_and_geojson(saldana_bbox)
+        wkt_1, geo_1 = _caja_a_wkt_y_geojson(caja_espinal)
+        wkt_2, geo_2 = _caja_a_wkt_y_geojson(caja_saldana)
 
-        lots = [
-            LotORM(
+        lotes = [
+            LoteORM(
                 id="LOTE-ESPINAL-01",
-                farm_id="FINCA-TOL-01",
-                name="Lote Las Acacias - Sector Norte",
-                municipality="El Espinal",
-                rice_variety="Fedearroz 67",
-                crop_age_days=58,
+                finca_id="FINCA-TOL-01",
+                nombre="Lote Las Acacias - Sector Norte",
+                municipio="El Espinal",
+                variedad_arroz="Fedearroz 67",
+                edad_cultivo_dias=58,
                 area_ha=42.5,
-                center_lat=ZONAS_ARROCERAS_TOLIMA["EL_ESPINAL"]["center_lat"],
-                center_lon=ZONAS_ARROCERAS_TOLIMA["EL_ESPINAL"]["center_lon"],
-                polygon_wkt=wkt_1,
-                polygon_geojson=geo_1,
+                latitud_centro=ZONAS_ARROCERAS_TOLIMA["EL_ESPINAL"]["center_lat"],
+                longitud_centro=ZONAS_ARROCERAS_TOLIMA["EL_ESPINAL"]["center_lon"],
+                poligono_wkt=wkt_1,
+                poligono_geojson=geo_1,
             ),
-            LotORM(
+            LoteORM(
                 id="LOTE-SALDANA-01",
-                farm_id="FINCA-TOL-02",
-                name="Lote El Canal - Distrito Saldaña",
-                municipality="Saldaña",
-                rice_variety="Fedearroz 2000",
-                crop_age_days=45,
+                finca_id="FINCA-TOL-02",
+                nombre="Lote El Canal - Distrito Saldaña",
+                municipio="Saldaña",
+                variedad_arroz="Fedearroz 2000",
+                edad_cultivo_dias=45,
                 area_ha=38.0,
-                center_lat=ZONAS_ARROCERAS_TOLIMA["SALDANA"]["center_lat"],
-                center_lon=ZONAS_ARROCERAS_TOLIMA["SALDANA"]["center_lon"],
-                polygon_wkt=wkt_2,
-                polygon_geojson=geo_2,
+                latitud_centro=ZONAS_ARROCERAS_TOLIMA["SALDANA"]["center_lat"],
+                longitud_centro=ZONAS_ARROCERAS_TOLIMA["SALDANA"]["center_lon"],
+                poligono_wkt=wkt_2,
+                poligono_geojson=geo_2,
             ),
         ]
-        db.add_all(lots)
+        sesion.add_all(lotes)
 
-        seed_detections = [
-            PhytosanitaryDetectionORM(
-                client_record_id="SEMILLA-001",
-                lot_id="LOTE-ESPINAL-01",
-                source_type="DRON_VANT",
-                disease_label="sano",
-                confidence=0.96,
-                severity_index=0.02,
-                latitude=4.1450,
-                longitude=-74.8900,
-                point_wkt="POINT(-74.8900 4.1450)",
+        detecciones_semilla = [
+            DeteccionFitosanitariaORM(
+                id_registro_cliente="SEMILLA-001",
+                lote_id="LOTE-ESPINAL-01",
+                tipo_fuente="DRON_VANT",
+                etiqueta_enfermedad="sano",
+                confianza=0.96,
+                indice_severidad=0.02,
+                latitud=4.1450,
+                longitud=-74.8900,
+                punto_wkt="POINT(-74.8900 4.1450)",
             ),
-            PhytosanitaryDetectionORM(
-                client_record_id="SEMILLA-002",
-                lot_id="LOTE-ESPINAL-01",
-                source_type="DRON_VANT",
-                disease_label="roya_parda",
-                confidence=0.92,
-                severity_index=0.72,
-                latitude=4.1486,
-                longitude=-74.8830,
-                point_wkt="POINT(-74.8830 4.1486)",
+            DeteccionFitosanitariaORM(
+                id_registro_cliente="SEMILLA-002",
+                lote_id="LOTE-ESPINAL-01",
+                tipo_fuente="DRON_VANT",
+                etiqueta_enfermedad="roya_parda",
+                confianza=0.92,
+                indice_severidad=0.72,
+                latitud=4.1486,
+                longitud=-74.8830,
+                punto_wkt="POINT(-74.8830 4.1486)",
             ),
-            PhytosanitaryDetectionORM(
-                client_record_id="SEMILLA-003",
-                lot_id="LOTE-ESPINAL-01",
-                source_type="MOVIL_OFFLINE",
-                disease_label="roya_amarilla",
-                confidence=0.89,
-                severity_index=0.73,
-                latitude=4.1515,
-                longitude=-74.8780,
-                point_wkt="POINT(-74.8780 4.1515)",
+            DeteccionFitosanitariaORM(
+                id_registro_cliente="SEMILLA-003",
+                lote_id="LOTE-ESPINAL-01",
+                tipo_fuente="MOVIL_OFFLINE",
+                etiqueta_enfermedad="roya_amarilla",
+                confianza=0.89,
+                indice_severidad=0.73,
+                latitud=4.1515,
+                longitud=-74.8780,
+                punto_wkt="POINT(-74.8780 4.1515)",
             ),
         ]
-        db.add_all(seed_detections)
-        db.commit()
+        sesion.add_all(detecciones_semilla)
+        sesion.commit()
 
 
-def get_db():
-    db: Session = SessionLocal()
+def obtener_sesion_bd():
+    sesion: Session = SesionLocal()
     try:
-        yield db
+        yield sesion
     finally:
-        db.close()
+        sesion.close()
+
+
+# Alias de compatibilidad
+engine = motor_bd
+SessionLocal = SesionLocal
+Base = BaseORM
+FarmORM = FincaORM
+LotORM = LoteORM
+PhytosanitaryDetectionORM = DeteccionFitosanitariaORM
+OrthomosaicJobORM = TrabajoOrtomosaicoORM
+init_db_and_seed_tolima_lots = inicializar_bd_y_sembrar_lotes_tolima
+get_db = obtener_sesion_bd

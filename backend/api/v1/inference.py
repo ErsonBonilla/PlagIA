@@ -1,5 +1,10 @@
 """
 Endpoints de Inferencia Visual Multinivel: Fotografía Móvil en Terreno y Ortomosaicos de Dron (/api/v1/inference).
+
+Aplica la Regla de Oro:
+- Lógica interna, modelos ORM (`DeteccionFitosanitariaORM`, `TrabajoOrtomosaicoORM`),
+  estados (`PENDIENTE`, `PROCESANDO`, `COMPLETADO`) y mensajes al usuario en español.
+- Rutas y esquemas del contrato HTTP/JSON en inglés.
 """
 
 from __future__ import annotations
@@ -9,25 +14,26 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from backend.core.config import configuracion
 from backend.core.database import (
-    OrthomosaicJobORM,
-    PhytosanitaryDetectionORM,
-    get_db,
+    DeteccionFitosanitariaORM,
+    TrabajoOrtomosaicoORM,
+    obtener_sesion_bd,
 )
-from backend.core.storage import storage_service
+from backend.core.storage import servicio_almacenamiento
 from backend.schemas.api_schemas import (
-    FieldPredictionResponse,
-    OrthomosaicJobResponse,
+    RespuestaPrediccionCampo,
+    RespuestaTrabajoOrtomosaico,
 )
 from backend.services.inference_service import inference_service
 from backend.workers.celery_app import (
-    execute_orthomosaic_analysis,
-    process_orthomosaic_task,
+    ejecutar_analisis_ortomosaico,
+    procesar_ortomosaico_tarea,
 )
 
 router = APIRouter(prefix="/inference", tags=["Inferencia IA Multinivel (Móvil & Dron)"])
 
-ALLOWED_IMAGE_TYPES = {
+TIPOS_IMAGEN_PERMITIDOS = {
     "image/jpeg",
     "image/jpg",
     "image/png",
@@ -36,107 +42,124 @@ ALLOWED_IMAGE_TYPES = {
 }
 
 
-@router.post("/mobile", response_model=FieldPredictionResponse)
-async def predict_mobile_field_image(
-    file: UploadFile = File(..., description="Fotografía foliar o de plaga capturada en terreno (JPEG/PNG)"),
+@router.post("/mobile", response_model=RespuestaPrediccionCampo)
+async def predecir_imagen_movil_campo(
+    file: UploadFile = File(
+        ..., description="Fotografía foliar o de plaga capturada en terreno (JPEG/PNG)"
+    ),
     lot_id: str = Form(default="LOTE-ESPINAL-01"),
     latitude: float = Form(default=4.1486),
     longitude: float = Form(default=-74.8830),
-    db: Session = Depends(get_db),
+    domain: str = Form(default="dron"),
+    sesion: Session = Depends(obtener_sesion_bd),
 ):
-    if file.content_type and file.content_type.lower() not in ALLOWED_IMAGE_TYPES:
+    if file.content_type and file.content_type.lower() not in TIPOS_IMAGEN_PERMITIDOS:
         raise HTTPException(
             status_code=400,
             detail=f"Formato de archivo no soportado: {file.content_type}. Envíe JPEG o PNG.",
         )
 
-    raw_bytes = await file.read()
+    bytes_crudos = await file.read()
     try:
-        result = inference_service.predict(
-            raw_bytes,
+        resultado = inference_service.predict(
+            bytes_crudos,
             lot_id=lot_id,
             latitude=latitude,
             longitude=longitude,
-            source_type="MOBILE_ONLINE",
+            source_type="MOVIL_EN_LINEA",
+            domain=domain,
         )
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"No fue posible procesar la imagen: {exc}") from exc
+        raise HTTPException(
+            status_code=400, detail=f"No fue posible procesar la imagen: {exc}"
+        ) from exc
 
-    object_key = f"mobile/{lot_id}/{uuid.uuid4().hex[:12]}_{file.filename or 'capture.jpg'}"
-    storage_service.save_bytes(object_key, raw_bytes, content_type=file.content_type or "image/jpeg")
-
-    detection = PhytosanitaryDetectionORM(
-        client_record_id=f"ONLINE-{uuid.uuid4().hex[:10]}",
-        lot_id=lot_id,
-        source_type="MOBILE_ONLINE",
-        disease_label=result["disease_label"],
-        confidence=result["confidence"],
-        severity_index=result["severity_index"],
-        latitude=latitude,
-        longitude=longitude,
-        point_wkt=f"POINT({longitude} {latitude})",
-        model_version=result["model_version"],
+    clave_objeto = f"movil/{lot_id}/{uuid.uuid4().hex[:12]}_{file.filename or 'captura.jpg'}"
+    servicio_almacenamiento.guardar_bytes(
+        clave_objeto, bytes_crudos, tipo_contenido=file.content_type or "image/jpeg"
     )
-    db.add(detection)
-    db.commit()
 
-    return FieldPredictionResponse(**result)
+    deteccion = DeteccionFitosanitariaORM(
+        id_registro_cliente=f"EN-LINEA-{uuid.uuid4().hex[:10]}",
+        lote_id=lot_id,
+        tipo_fuente="MOVIL_EN_LINEA",
+        etiqueta_enfermedad=resultado["disease_label"],
+        confianza=resultado["confidence"],
+        indice_severidad=resultado["severity_index"],
+        latitud=latitude,
+        longitud=longitude,
+        punto_wkt=f"POINT({longitude} {latitude})",
+        version_modelo=resultado["model_version"],
+    )
+    sesion.add(deteccion)
+    sesion.commit()
+
+    return RespuestaPrediccionCampo(**resultado)
 
 
-@router.post("/orthomosaic", response_model=OrthomosaicJobResponse)
-async def submit_drone_orthomosaic(
+@router.post("/orthomosaic", response_model=RespuestaTrabajoOrtomosaico)
+async def enviar_ortomosaico_dron(
     file: UploadFile = File(..., description="Ortomosaico GeoTIFF o captura aérea de dron (VANT)"),
     lot_id: str = Form(default="LOTE-ESPINAL-01"),
-    db: Session = Depends(get_db),
+    sesion: Session = Depends(obtener_sesion_bd),
 ):
-    raw_bytes = await file.read()
-    if not raw_bytes:
+    bytes_crudos = await file.read()
+    if not bytes_crudos:
         raise HTTPException(status_code=400, detail="El archivo de ortomosaico está vacío.")
 
-    task_id = f"ORTHO-{uuid.uuid4().hex[:12].upper()}"
+    id_tarea = f"ORTO-{uuid.uuid4().hex[:12].upper()}"
     ext = ".tif" if (file.filename or "").lower().endswith((".tif", ".tiff")) else ".jpg"
-    object_key = f"orthomosaics/{lot_id}/{task_id}{ext}"
-    saved_obj = storage_service.save_bytes(object_key, raw_bytes)
+    clave_objeto = f"ortomosaicos/{lot_id}/{id_tarea}{ext}"
+    objeto_guardado = servicio_almacenamiento.guardar_bytes(clave_objeto, bytes_crudos)
 
-    job = OrthomosaicJobORM(
-        task_id=task_id,
-        lot_id=lot_id,
-        status="PENDING",
-        storage_object_key=object_key,
+    trabajo = TrabajoOrtomosaicoORM(
+        id_tarea=id_tarea,
+        lote_id=lot_id,
+        estado="PENDIENTE",
+        clave_objeto_almacenamiento=clave_objeto,
     )
-    db.add(job)
-    db.commit()
+    sesion.add(trabajo)
+    sesion.commit()
 
-    try:
-        process_orthomosaic_task.delay(task_id, lot_id, saved_obj["local_path"])
-    except Exception:
-        execute_orthomosaic_analysis(task_id, lot_id, saved_obj["local_path"])
+    if configuracion.celery_eager_fallback:
+        ejecutar_analisis_ortomosaico(id_tarea, lot_id, objeto_guardado["local_path"])
+    else:
+        try:
+            procesar_ortomosaico_tarea.delay(id_tarea, lot_id, objeto_guardado["local_path"])
+        except Exception:
+            ejecutar_analisis_ortomosaico(id_tarea, lot_id, objeto_guardado["local_path"])
 
-    db.refresh(job)
-    return OrthomosaicJobResponse(
-        task_id=job.task_id,
-        lot_id=job.lot_id,
-        status=job.status,
-        total_patches=job.total_patches,
-        infested_patches=job.infested_patches,
-        infection_rate=job.infection_rate,
+    sesion.refresh(trabajo)
+    return RespuestaTrabajoOrtomosaico(
+        task_id=trabajo.id_tarea,
+        lot_id=trabajo.lote_id,
+        status=trabajo.estado,
+        total_patches=trabajo.total_parches,
+        infested_patches=trabajo.parches_infestados,
+        infection_rate=trabajo.tasa_infestacion,
         heatmap_geojson_url=f"/api/v1/geospatial/heatmap/{lot_id}",
-        message="Ortomosaico procesado y capa de calor actualizada.",
+        message="Ortomosaico procesado y capa de calor actualizada exitosamente.",
     )
 
 
-@router.get("/tasks/{task_id}", response_model=OrthomosaicJobResponse)
-def get_orthomosaic_job_status(task_id: str, db: Session = Depends(get_db)):
-    job = db.query(OrthomosaicJobORM).filter(OrthomosaicJobORM.task_id == task_id).first()
-    if job is None:
+@router.get("/tasks/{task_id}", response_model=RespuestaTrabajoOrtomosaico)
+def obtener_estado_trabajo_ortomosaico(
+    task_id: str, sesion: Session = Depends(obtener_sesion_bd)
+):
+    trabajo = (
+        sesion.query(TrabajoOrtomosaicoORM)
+        .filter(TrabajoOrtomosaicoORM.id_tarea == task_id)
+        .first()
+    )
+    if trabajo is None:
         raise HTTPException(status_code=404, detail=f"No existe la tarea '{task_id}'")
-    return OrthomosaicJobResponse(
-        task_id=job.task_id,
-        lot_id=job.lot_id,
-        status=job.status,
-        total_patches=job.total_patches,
-        infested_patches=job.infested_patches,
-        infection_rate=job.infection_rate,
-        heatmap_geojson_url=f"/api/v1/geospatial/heatmap/{job.lot_id}",
-        message=f"Estado de procesamiento: {job.status}",
+    return RespuestaTrabajoOrtomosaico(
+        task_id=trabajo.id_tarea,
+        lot_id=trabajo.lote_id,
+        status=trabajo.estado,
+        total_patches=trabajo.total_parches,
+        infested_patches=trabajo.parches_infestados,
+        infection_rate=trabajo.tasa_infestacion,
+        heatmap_geojson_url=f"/api/v1/geospatial/heatmap/{trabajo.lote_id}",
+        message=f"Estado de procesamiento: {trabajo.estado}",
     )

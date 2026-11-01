@@ -1,8 +1,11 @@
 """
 Worker Asíncrono Celery + Redis para Segmentación e Inferencia de Ortomosaicos GeoTIFF.
 
-Si Redis no se encuentra activo en desarrollo local (`PLAGIA_CELERY_EAGER_FALLBACK=true`),
-ejecuta el pipeline de forma síncrona/en proceso para garantizar operatividad continua.
+Aplica la Regla de Oro:
+- Funciones, variables, modelos ORM y estados internos en español (`ejecutar_analisis_ortomosaico`,
+  `PROCESANDO`, `COMPLETADO`, `ORTO_DRON_VANT`).
+- Configuración del protocolo Celery (`task_serializer`, `accept_content`, `result_serializer`,
+  `timezone`, `enable_utc`, `task_always_eager`) en inglés.
 """
 
 from __future__ import annotations
@@ -11,25 +14,25 @@ from pathlib import Path
 
 from celery import Celery
 
-from backend.core.config import settings
+from backend.core.config import configuracion
 from backend.core.database import (
-    OrthomosaicJobORM,
-    PhytosanitaryDetectionORM,
-    SessionLocal,
+    DeteccionFitosanitariaORM,
+    SesionLocal,
+    TrabajoOrtomosaicoORM,
 )
 from backend.services.inference_service import inference_service
-from ml_engine.config import ARTIFACTS_DIR
+from ml_engine.config import DIR_ARTEFACTOS
 from ml_engine.geospatial import (
-    build_heatmap_geodataframe,
-    create_sample_orthomosaic_geotiff,
-    export_heatmap_artifacts,
-    slice_orthomosaic_into_patches,
+    construir_geodataframe_mapa_calor,
+    crear_ortomosaico_geotiff_muestra,
+    exportar_artefactos_mapa_calor,
+    seccionar_ortomosaico_en_parches,
 )
 
 celery_app = Celery(
-    "plagia_enterprise_worker",
-    broker=settings.redis_url,
-    backend=settings.redis_url,
+    "plagia_worker_empresarial",
+    broker=configuracion.redis_url,
+    backend=configuracion.redis_url,
 )
 celery_app.conf.update(
     task_serializer="json",
@@ -37,39 +40,43 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="America/Bogota",
     enable_utc=True,
-    task_always_eager=settings.celery_eager_fallback,
+    task_always_eager=configuracion.celery_eager_fallback,
 )
 
 
-def execute_orthomosaic_analysis(task_id: str, lot_id: str, file_path_str: str) -> dict:
-    """Secciona un ortomosaico GeoTIFF (o convierte imagen aérea), clasifica parches y genera el Mapa de Calor."""
-    file_path = Path(file_path_str)
-    if file_path.suffix.lower() not in {".tif", ".tiff"}:
-        tif_target = ARTIFACTS_DIR / "orthomosaics" / f"{task_id}.tif"
-        file_path = create_sample_orthomosaic_geotiff(
-            tif_target,
+def ejecutar_analisis_ortomosaico(id_tarea: str, id_lote: str, ruta_archivo_str: str) -> dict:
+    """Secciona un ortomosaico GeoTIFF, clasifica parches y genera el Mapa de Calor."""
+    ruta_archivo = Path(ruta_archivo_str)
+    if ruta_archivo.suffix.lower() not in {".tif", ".tiff"}:
+        destino_tif = DIR_ARTEFACTOS / "ortomosaicos" / f"{id_tarea}.tif"
+        ruta_archivo = crear_ortomosaico_geotiff_muestra(
+            destino_tif,
             zone_key="EL_ESPINAL",
-            source_images=[file_path] * 9,
+            source_images=[ruta_archivo] * 9,
         )
 
-    patches = slice_orthomosaic_into_patches(file_path, patch_size=224)
-    patch_predictions: list[dict] = []
+    parches = seccionar_ortomosaico_en_parches(ruta_archivo, patch_size=224)
+    predicciones_parches: list[dict] = []
 
-    with SessionLocal() as db:
-        job = db.query(OrthomosaicJobORM).filter(OrthomosaicJobORM.task_id == task_id).first()
-        if job:
-            job.status = "PROCESSING"
-            db.commit()
+    with SesionLocal() as sesion:
+        trabajo = (
+            sesion.query(TrabajoOrtomosaicoORM)
+            .filter(TrabajoOrtomosaicoORM.id_tarea == id_tarea)
+            .first()
+        )
+        if trabajo:
+            trabajo.estado = "PROCESANDO"
+            sesion.commit()
 
-        for p in patches:
+        for p in parches:
             pred = inference_service.predict(
                 p["image_rgb"],
-                lot_id=lot_id,
+                lot_id=id_lote,
                 latitude=p["center_lat"],
                 longitude=p["center_lon"],
-                source_type="DRONE_ORTHOMOSAIC",
+                source_type="ORTO_DRON_VANT",
             )
-            patch_predictions.append(
+            predicciones_parches.append(
                 {
                     "patch_id": p["patch_id"],
                     "disease_label": pred["disease_label"],
@@ -79,36 +86,43 @@ def execute_orthomosaic_analysis(task_id: str, lot_id: str, file_path_str: str) 
                     "longitude": p["center_lon"],
                 }
             )
-            db.add(
-                PhytosanitaryDetectionORM(
-                    client_record_id=f"{task_id}-{p['patch_id']}",
-                    lot_id=lot_id,
-                    source_type="DRONE_ORTHOMOSAIC",
-                    disease_label=pred["disease_label"],
-                    confidence=pred["confidence"],
-                    severity_index=pred["severity_index"],
-                    latitude=p["center_lat"],
-                    longitude=p["center_lon"],
-                    point_wkt=f"POINT({p['center_lon']} {p['center_lat']})",
-                    model_version=pred["model_version"],
+            sesion.add(
+                DeteccionFitosanitariaORM(
+                    id_registro_cliente=f"{id_tarea}-{p['patch_id']}",
+                    lote_id=id_lote,
+                    tipo_fuente="ORTO_DRON_VANT",
+                    etiqueta_enfermedad=pred["disease_label"],
+                    confianza=pred["confidence"],
+                    indice_severidad=pred["severity_index"],
+                    latitud=p["center_lat"],
+                    longitud=p["center_lon"],
+                    punto_wkt=f"POINT({p['center_lon']} {p['center_lat']})",
+                    version_modelo=pred["model_version"],
                 )
             )
 
-        gdf = build_heatmap_geodataframe(patch_predictions, lot_id=lot_id)
-        heatmap_summary = export_heatmap_artifacts(gdf, lot_id=lot_id)
+        gdf = construir_geodataframe_mapa_calor(predicciones_parches, lot_id=id_lote)
+        resumen_mapa = exportar_artefactos_mapa_calor(gdf, lot_id=id_lote)
 
-        if job:
-            job.status = "COMPLETED"
-            job.total_patches = heatmap_summary["total_cells"]
-            job.infested_patches = heatmap_summary["infested_cells"]
-            job.infection_rate = heatmap_summary["infection_rate"]
-            job.heatmap_geojson_path = heatmap_summary["geojson_path"]
-            job.heatmap_png_path = heatmap_summary["png_path"]
-        db.commit()
+        if trabajo:
+            trabajo.estado = "COMPLETADO"
+            trabajo.total_parches = resumen_mapa["total_cells"]
+            trabajo.parches_infestados = resumen_mapa["infested_cells"]
+            trabajo.tasa_infestacion = resumen_mapa["infection_rate"]
+            trabajo.ruta_mapa_calor_geojson = resumen_mapa["geojson_path"]
+            trabajo.ruta_mapa_calor_png = resumen_mapa["png_path"]
+        sesion.commit()
 
-    return heatmap_summary
+    return resumen_mapa
 
 
-@celery_app.task(name="plagia.process_orthomosaic")
-def process_orthomosaic_task(task_id: str, lot_id: str, file_path_str: str) -> dict:
-    return execute_orthomosaic_analysis(task_id=task_id, lot_id=lot_id, file_path_str=file_path_str)
+@celery_app.task(name="plagia.procesar_ortomosaico")
+def procesar_ortomosaico_tarea(id_tarea: str, id_lote: str, ruta_archivo_str: str) -> dict:
+    return ejecutar_analisis_ortomosaico(
+        id_tarea=id_tarea, id_lote=id_lote, ruta_archivo_str=ruta_archivo_str
+    )
+
+
+# Alias de compatibilidad
+execute_orthomosaic_analysis = ejecutar_analisis_ortomosaico
+process_orthomosaic_task = procesar_ortomosaico_tarea

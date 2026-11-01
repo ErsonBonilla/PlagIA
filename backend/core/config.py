@@ -1,8 +1,10 @@
 """
 Configuración tipada del Backend Empresarial de PlagIA (Pydantic Settings).
 
-Establece PostgreSQL + PostGIS como base de datos principal y SQLite como
-base de datos conveniente de respaldo automático (Auto-Failover).
+Aplica la Regla de Oro:
+- Clase e instancias internas en español (`ConfiguracionEmpresarial`, `configuracion`).
+- Interfaz exigida por `pydantic_settings` (`BaseSettings`, `SettingsConfigDict`, `model_config`)
+  y nombres de variables de entorno mapeadas se conservan según contrato externo.
 """
 
 from __future__ import annotations
@@ -12,17 +14,17 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from ml_engine.config import PROJECT_ROOT
+from ml_engine.config import RAIZ_PROYECTO
 
 
-class EnterpriseSettings(BaseSettings):
+class ConfiguracionEmpresarial(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PLAGIA_", extra="ignore")
 
-    env: str = "production"
-    app_name: str = "PlagIA Enterprise - Vigilancia Fitosanitaria Tolima"
+    env: str = "produccion"
+    app_name: str = "PlagIA Empresarial - Vigilancia Fitosanitaria del Tolima"
     version: str = "1.0.0"
 
-    secret_key: str = "plagia-tolima-enterprise-secret-key-change-in-prod-2026"
+    secret_key: str = "plagia-tolima-clave-secreta-empresarial-2026"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 480
 
@@ -34,7 +36,7 @@ class EnterpriseSettings(BaseSettings):
     # Base de datos conveniente de respaldo local: SQLite
     sqlite_fallback_url: str = os.environ.get(
         "PLAGIA_SQLITE_FALLBACK_URL",
-        f"sqlite:///{(PROJECT_ROOT / 'plagia_enterprise.db').as_posix()}",
+        f"sqlite:///{(RAIZ_PROYECTO / 'plagia_enterprise.db').as_posix()}",
     )
 
     redis_url: str = os.environ.get("PLAGIA_REDIS_URL", "redis://localhost:6379/0")
@@ -48,7 +50,9 @@ class EnterpriseSettings(BaseSettings):
     minio_bucket: str = os.environ.get("PLAGIA_MINIO_BUCKET", "plagia-tolima-orthomosaics")
     minio_secure: bool = False
 
-    storage_local_dir: Path = PROJECT_ROOT / "storage_local"
+    storage_local_dir: Path = RAIZ_PROYECTO / "storage_local"
 
 
-settings = EnterpriseSettings()
+configuracion = ConfiguracionEmpresarial()
+EnterpriseSettings = ConfiguracionEmpresarial
+settings = configuracion

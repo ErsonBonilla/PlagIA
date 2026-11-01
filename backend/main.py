@@ -1,10 +1,9 @@
 """
 Punto de Entrada Principal del Backend Empresarial PlagIA (FastAPI Asíncrono).
 
-Integra:
-- Inicialización única del motor de inferencia ONNX Runtime (GPU CUDA / CPU) + YOLO.
-- Inicialización de la base de datos geoespacial (PostGIS / SQLite) con lotes del Tolima.
-- Rutas RESTful `/api/v1/auth`, `/api/v1/farms`, `/api/v1/inference`, `/api/v1/sync` y `/api/v1/geospatial`.
+Aplica la Regla de Oro:
+- Configuración, ciclo de inicialización de BD/modelos y mensajes visibles en español.
+- Rutas del contrato REST (`/api/v1/*`, `/health`) e interfaz FastAPI (`lifespan`) en inglés.
 """
 
 from __future__ import annotations
@@ -15,33 +14,33 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.v1 import auth, farms, geospatial, inference, sync
-from backend.core.config import settings
+from backend.core.config import configuracion
 from backend.core.database import (
-    init_db_and_seed_tolima_lots,
+    inicializar_bd_y_sembrar_lotes_tolima,
     obtener_estado_motor_bd,
 )
-from backend.core.storage import storage_service
-from backend.schemas.api_schemas import HealthStatusResponse
+from backend.core.storage import servicio_almacenamiento
+from backend.schemas.api_schemas import RespuestaEstadoSalud
 from backend.services.inference_service import inference_service
-from ml_engine.config import AGRONOMIC_DISCLAIMER
+from ml_engine.config import AVISO_AGRONOMICO
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db_and_seed_tolima_lots()
-    storage_service.try_connect_minio()
+    inicializar_bd_y_sembrar_lotes_tolima()
+    servicio_almacenamiento.intentar_conectar_minio()
     inference_service.load()
     yield
 
 
 app = FastAPI(
-    title=settings.app_name,
+    title=configuracion.app_name,
     description=(
         "Plataforma Empresarial de Vigilancia Fitosanitaria Multinivel (Drones VANT + App Móvil "
         "Flutter Edge-AI) y Mapeo Geoespacial para el Cultivo de Arroz en el Tolima. "
-        + AGRONOMIC_DISCLAIMER
+        + AVISO_AGRONOMICO
     ),
-    version=settings.version,
+    version=configuracion.version,
     lifespan=lifespan,
 )
 
@@ -54,23 +53,27 @@ app.add_middleware(
 )
 
 
-@app.get("/health", response_model=HealthStatusResponse, tags=["Monitoreo e Infraestructura"])
-@app.get("/api/v1/health", response_model=HealthStatusResponse, tags=["Monitoreo e Infraestructura"])
-def health_check():
-    hw = inference_service.get_hardware_status()
-    db_type = obtener_estado_motor_bd()
-    storage_type = "MinIO-S3" if storage_service.minio_active else "LocalObjectStore"
-    return HealthStatusResponse(
+@app.get("/health", response_model=RespuestaEstadoSalud, tags=["Monitoreo e Infraestructura"])
+@app.get("/api/v1/health", response_model=RespuestaEstadoSalud, tags=["Monitoreo e Infraestructura"])
+def verificar_salud_sistema():
+    estado_hw = inference_service.get_hardware_status()
+    motor_bd = obtener_estado_motor_bd()
+    motor_almacenamiento = (
+        "MinIO-S3 (Activo)"
+        if servicio_almacenamiento.minio_activo
+        else "Almacenamiento Local de Objetos"
+    )
+    return RespuestaEstadoSalud(
         status="ok",
-        app_name=settings.app_name,
-        version=settings.version,
+        app_name=configuracion.app_name,
+        version=configuracion.version,
         model_loaded=inference_service.is_loaded(),
-        active_engine=hw["active_engine"],
-        cuda_available=hw["cuda_available"],
-        gpu_name=hw["gpu_name"],
-        vram_total_mb=hw["vram_total_mb"],
-        database_status=f"connected ({db_type})",
-        storage_backend=storage_type,
+        active_engine=estado_hw["active_engine"],
+        cuda_available=estado_hw["cuda_available"],
+        gpu_name=estado_hw["gpu_name"],
+        vram_total_mb=estado_hw["vram_total_mb"],
+        database_status=f"Conectado ({motor_bd})",
+        storage_backend=motor_almacenamiento,
     )
 
 

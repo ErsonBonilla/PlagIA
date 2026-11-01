@@ -4,68 +4,77 @@ import '../config/app_config.dart';
 import '../models/inspection_record.dart';
 
 /// Gestor de Cola Offline-First y Sincronización por Lotes hacia FastAPI (`/api/v1/sync/batch`).
-class OfflineSyncService {
-  final List<InspectionRecord> _records = [];
+///
+/// Aplica la Regla de Oro:
+/// - Métodos, estados internos y mensajes al usuario en español.
+/// - Cabeceras HTTP (`Content-Type`) y contrato JSON (`device_id`, `records`) en inglés.
+class ServicioSincronizacionOffline {
+  final List<RegistroInspeccion> _registros = [];
 
-  List<InspectionRecord> get allRecords => List.unmodifiable(_records);
+  List<RegistroInspeccion> get todosLosRegistros =>
+      List.unmodifiable(_registros);
 
-  int get pendingCount => _records.where((r) => !r.isSynced).length;
+  int get conteoPendientes => _registros.where((r) => !r.sincronizado).length;
 
-  void enqueueRecord(InspectionRecord record) {
-    _records.insert(0, record);
+  void encolarRegistro(RegistroInspeccion registro) {
+    _registros.insert(0, registro);
   }
 
-  Future<Map<String, dynamic>> syncPendingRecords() async {
-    final pending = _records.where((r) => !r.isSynced).toList();
-    if (pending.isEmpty) {
+  Future<Map<String, dynamic>> sincronizarRegistrosPendientes() async {
+    final pendientes = _registros.where((r) => !r.sincronizado).toList();
+    if (pendientes.isEmpty) {
       return {
-        'synced_count': 0,
-        'status': 'NO_PENDING_RECORDS',
-        'message': 'No existen inspecciones pendientes por sincronizar.',
+        'sincronizados': 0,
+        'estado': 'SIN_PENDIENTES',
+        'mensaje': 'No existen inspecciones pendientes por sincronizar.',
       };
     }
 
-    final uri = Uri.parse('${AppConfig.apiBaseUrl}/sync/batch');
-    final payload = {
-      'device_id': AppConfig.deviceId,
-      'records': pending.map((e) => e.toSyncJson()).toList(),
+    final uri = Uri.parse('${ConfiguracionApp.urlBaseApi}/sync/batch');
+    final cargaContrato = {
+      'device_id': ConfiguracionApp.idDispositivo,
+      'records': pendientes.map((e) => e.toSyncJson()).toList(),
     };
 
     try {
-      final response = await http
+      final respuesta = await http
           .post(
             uri,
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
+            body: jsonEncode(cargaContrato),
           )
           .timeout(const Duration(seconds: 6));
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-        for (final item in pending) {
-          item.isSynced = true;
+      if (respuesta.statusCode >= 200 && respuesta.statusCode < 300) {
+        final decodificado =
+            jsonDecode(respuesta.body) as Map<String, dynamic>;
+        for (final item in pendientes) {
+          item.sincronizado = true;
         }
         return {
-          'synced_count': pending.length,
-          'status': 'SYNCED_ONLINE',
-          'lot_infection_rate': decoded['lot_updated_infection_rate'] ?? 0.0,
-          'message':
-              'Sincronizados ${pending.length} registros con el servidor PostGIS.',
+          'sincronizados': pendientes.length,
+          'estado': 'SINCRONIZADO_EN_LINEA',
+          'tasa_infestacion_lote':
+              decodificado['lot_updated_infection_rate'] ?? 0.0,
+          'mensaje':
+              'Sincronizados ${pendientes.length} registros con el servidor PostgreSQL/PostGIS.',
         };
       }
       return {
-        'synced_count': 0,
-        'status': 'SERVER_ERROR_${response.statusCode}',
-        'message':
-            'Servidor respondió HTTP ${response.statusCode}. Los datos siguen seguros en la cola local.',
+        'sincronizados': 0,
+        'estado': 'ERROR_SERVIDOR_${respuesta.statusCode}',
+        'mensaje':
+            'Servidor respondió HTTP ${respuesta.statusCode}. Los datos siguen seguros en la cola local.',
       };
     } catch (_) {
       return {
-        'synced_count': 0,
-        'status': 'OFFLINE_QUEUED',
-        'message':
-            'Sin conexión al servidor (${AppConfig.apiBaseUrl}). ${pending.length} inspecciones resguardadas localmente.',
+        'sincronizados': 0,
+        'estado': 'ENCOLADO_OFFLINE',
+        'mensaje':
+            'Sin conexión al servidor (${ConfiguracionApp.urlBaseApi}). ${pendientes.length} inspecciones resguardadas localmente.',
       };
     }
   }
 }
+
+typedef OfflineSyncService = ServicioSincronizacionOffline;

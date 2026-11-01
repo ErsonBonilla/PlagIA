@@ -8,16 +8,16 @@ import 'services/offline_sync_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const PlagIAEnterpriseApp());
+  runApp(const AplicacionEmpresarialPlagIA());
 }
 
-class PlagIAEnterpriseApp extends StatelessWidget {
-  const PlagIAEnterpriseApp({super.key});
+class AplicacionEmpresarialPlagIA extends StatelessWidget {
+  const AplicacionEmpresarialPlagIA({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: AppConfig.appTitle,
+      title: ConfiguracionApp.tituloApp,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -26,60 +26,66 @@ class PlagIAEnterpriseApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const PlagIAHomeShell(),
+      home: const ContenedorInicioPlagIA(),
     );
   }
 }
 
-class PlagIAHomeShell extends StatefulWidget {
-  const PlagIAHomeShell({super.key});
+class ContenedorInicioPlagIA extends StatefulWidget {
+  const ContenedorInicioPlagIA({super.key});
 
   @override
-  State<PlagIAHomeShell> createState() => _PlagIAHomeShellState();
+  State<ContenedorInicioPlagIA> createState() => _EstadoContenedorInicioPlagIA();
 }
 
-class _PlagIAHomeShellState extends State<PlagIAHomeShell> {
-  final EdgeInferenceService _edgeService = EdgeInferenceService();
-  final GpsService _gpsService = GpsService();
-  final OfflineSyncService _syncService = OfflineSyncService();
+class _EstadoContenedorInicioPlagIA extends State<ContenedorInicioPlagIA> {
+  final ServicioInferenciaBorde _servicioBorde = ServicioInferenciaBorde();
+  final ServicioGps _servicioGps = ServicioGps();
+  final ServicioSincronizacionOffline _servicioSincronizacion =
+      ServicioSincronizacionOffline();
 
-  int _currentIndex = 0;
-  String _syncBannerMessage =
+  int _indiceActual = 0;
+  String _mensajeEstadoSincronizacion =
       'Modo Rural Offline-First activo. Listo para diagnosticar en terreno.';
 
-  Future<void> _triggerSync() async {
-    final result = await _syncService.syncPendingRecords();
+  Future<void> _ejecutarSincronizacion() async {
+    final resultado =
+        await _servicioSincronizacion.sincronizarRegistrosPendientes();
     if (!mounted) return;
     setState(() {
-      _syncBannerMessage = result['message'] as String;
+      _mensajeEstadoSincronizacion = resultado['mensaje'] as String;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_syncBannerMessage)),
+      SnackBar(content: Text(_mensajeEstadoSincronizacion)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      FieldScannerScreen(
-        edgeService: _edgeService,
-        gpsService: _gpsService,
-        syncService: _syncService,
-        onRecordAdded: () => setState(() {}),
+    final paginas = [
+      PantallaEscanerCampo(
+        servicioBorde: _servicioBorde,
+        servicioGps: _servicioGps,
+        servicioSincronizacion: _servicioSincronizacion,
+        alAgregarRegistro: () => setState(() {}),
       ),
-      FarmHeatmapScreen(records: _syncService.allRecords),
+      PantallaMapaCalorFinca(
+        registros: _servicioSincronizacion.todosLosRegistros,
+      ),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PlagIA Tolima Enterprise'),
+        title: const Text('PlagIA Tolima Empresarial'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: ActionChip(
               avatar: const Icon(Icons.sync, size: 18),
-              label: Text('Cola Sync (${_syncService.pendingCount})'),
-              onPressed: _triggerSync,
+              label: Text(
+                'Cola Sync (${_servicioSincronizacion.conteoPendientes})',
+              ),
+              onPressed: _ejecutarSincronizacion,
             ),
           ),
         ],
@@ -91,18 +97,18 @@ class _PlagIAHomeShellState extends State<PlagIAHomeShell> {
             color: const Color(0xFFE8F5E9),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              _syncBannerMessage,
+              _mensajeEstadoSincronizacion,
               style: const TextStyle(fontSize: 12, color: Color(0xFF1B5E20)),
             ),
           ),
-          Expanded(child: pages[_currentIndex]),
+          Expanded(child: paginas[_indiceActual]),
         ],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
+        selectedIndex: _indiceActual,
         onDestinationSelected: (idx) {
           setState(() {
-            _currentIndex = idx;
+            _indiceActual = idx;
           });
         },
         destinations: const [
@@ -121,3 +127,5 @@ class _PlagIAHomeShellState extends State<PlagIAHomeShell> {
     );
   }
 }
+
+typedef PlagIAEnterpriseApp = AplicacionEmpresarialPlagIA;

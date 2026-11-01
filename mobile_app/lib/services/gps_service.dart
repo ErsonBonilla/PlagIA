@@ -2,24 +2,26 @@ import 'dart:math';
 import '../config/app_config.dart';
 
 /// Servicio de Geolocalización GPS Offline para los Lotes Arroceros del Tolima.
-class GpsService {
-  final Random _rng = Random(42);
+class ServicioGps {
+  final Random _generador = Random(42);
 
-  Map<String, double> captureCurrentLotCoordinates(String lotId) {
-    final lot = AppConfig.tolimaLots.firstWhere(
-      (element) => element['id'] == lotId,
-      orElse: () => AppConfig.tolimaLots.first,
+  Map<String, double> capturarCoordenadasLoteActual(String idLote) {
+    final lote = ConfiguracionApp.lotesTolima.firstWhere(
+      (elemento) => elemento['id'] == idLote,
+      orElse: () => ConfiguracionApp.lotesTolima.first,
     );
-    final double baseLat = (lot['lat'] as num).toDouble();
-    final double baseLon = (lot['lon'] as num).toDouble();
+    final double latBase = (lote['latitud'] as num).toDouble();
+    final double lonBase = (lote['longitud'] as num).toDouble();
 
-    final double jitterLat = (_rng.nextDouble() - 0.5) * 0.008;
-    final double jitterLon = (_rng.nextDouble() - 0.5) * 0.008;
+    final double variacionLat = (_generador.nextDouble() - 0.5) * 0.008;
+    final double variacionLon = (_generador.nextDouble() - 0.5) * 0.008;
 
     return {
-      'latitude': double.parse((baseLat + jitterLat).toStringAsFixed(6)),
-      'longitude': double.parse((baseLon + jitterLon).toStringAsFixed(6)),
-      'accuracy_m': 3.2,
+      'latitud': double.parse((latBase + variacionLat).toStringAsFixed(6)),
+      'longitud': double.parse((lonBase + variacionLon).toStringAsFixed(6)),
+      'precision_m': 3.2,
     };
   }
 }
+
+typedef GpsService = ServicioGps;

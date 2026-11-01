@@ -1,70 +1,95 @@
 """
-Servicio de Almacenamiento de Objetos Empresarial (MinIO S3 + Fallback Local).
+Servicio de Almacenamiento de Objetos Empresarial (MinIO S3 + Respaldo Local).
 
-Guarda ortomosaicos GeoTIFF, imágenes enviadas desde campo y mapas de calor generados.
+Aplica la Regla de Oro:
+- Clase, métodos y variables internas en español (`ServicioAlmacenamientoObjetos`,
+  `intentar_conectar_minio`, `guardar_bytes`).
+- Interfaz del SDK `minio` (`Minio`, `bucket_exists`, `make_bucket`, `put_object`) en inglés.
 """
 
 from __future__ import annotations
 
 import io
+import socket
 from pathlib import Path
 
-from backend.core.config import settings
+from backend.core.config import configuracion
 
 
-class ObjectStorageService:
+class ServicioAlmacenamientoObjetos:
     def __init__(self) -> None:
-        self.local_root: Path = settings.storage_local_dir
-        self.local_root.mkdir(parents=True, exist_ok=True)
-        self.bucket = settings.minio_bucket
-        self.minio_client = None
-        self.minio_active = False
+        self.raiz_local: Path = configuracion.storage_local_dir
+        self.raiz_local.mkdir(parents=True, exist_ok=True)
+        self.deposito = configuracion.minio_bucket
+        self.cliente_minio = None
+        self.minio_activo = False
 
-    def try_connect_minio(self) -> bool:
+    def intentar_conectar_minio(self) -> bool:
         try:
+            partes = configuracion.minio_endpoint.split(":")
+            host = partes[0]
+            puerto = int(partes[1]) if len(partes) > 1 else 9000
+            with socket.create_connection((host, puerto), timeout=0.4):
+                pass
+
             from minio import Minio
 
-            client = Minio(
-                settings.minio_endpoint,
-                access_key=settings.minio_access_key,
-                secret_key=settings.minio_secret_key,
-                secure=settings.minio_secure,
+            cliente = Minio(
+                configuracion.minio_endpoint,
+                access_key=configuracion.minio_access_key,
+                secret_key=configuracion.minio_secret_key,
+                secure=configuracion.minio_secure,
             )
-            if not client.bucket_exists(self.bucket):
-                client.make_bucket(self.bucket)
-            self.minio_client = client
-            self.minio_active = True
+            if not cliente.bucket_exists(self.deposito):
+                cliente.make_bucket(self.deposito)
+            self.cliente_minio = cliente
+            self.minio_activo = True
             return True
         except Exception:
-            self.minio_active = False
+            self.minio_activo = False
             return False
 
-    def save_bytes(self, object_key: str, data: bytes, content_type: str = "application/octet-stream") -> dict:
+    def guardar_bytes(
+        self,
+        clave_objeto: str,
+        datos: bytes,
+        tipo_contenido: str = "application/octet-stream",
+    ) -> dict:
         """Guarda un objeto en MinIO (si está activo) y mantiene réplica en `storage_local/`."""
-        local_path = self.local_root / object_key
-        local_path.parent.mkdir(parents=True, exist_ok=True)
-        local_path.write_bytes(data)
+        ruta_local = self.raiz_local / clave_objeto
+        ruta_local.parent.mkdir(parents=True, exist_ok=True)
+        ruta_local.write_bytes(datos)
 
-        storage_backend = "local_filesystem"
-        if self.minio_active and self.minio_client is not None:
+        motor_almacenamiento = "sistema_archivos_local"
+        if self.minio_activo and self.cliente_minio is not None:
             try:
-                self.minio_client.put_object(
-                    self.bucket,
-                    object_key,
-                    io.BytesIO(data),
-                    length=len(data),
-                    content_type=content_type,
+                self.cliente_minio.put_object(
+                    self.deposito,
+                    clave_objeto,
+                    io.BytesIO(datos),
+                    length=len(datos),
+                    content_type=tipo_contenido,
                 )
-                storage_backend = f"minio://{self.bucket}/{object_key}"
+                motor_almacenamiento = f"minio://{self.deposito}/{clave_objeto}"
             except Exception:
-                storage_backend = "local_filesystem"
+                motor_almacenamiento = "sistema_archivos_local"
 
         return {
-            "object_key": object_key,
-            "local_path": str(local_path),
-            "storage_backend": storage_backend,
-            "size_bytes": len(data),
+            "object_key": clave_objeto,
+            "local_path": str(ruta_local),
+            "storage_backend": motor_almacenamiento,
+            "size_bytes": len(datos),
         }
 
+    # Propiedades y alias de compatibilidad
+    @property
+    def minio_active(self) -> bool:
+        return self.minio_activo
 
-storage_service = ObjectStorageService()
+    try_connect_minio = intentar_conectar_minio
+    save_bytes = guardar_bytes
+
+
+servicio_almacenamiento = ServicioAlmacenamientoObjetos()
+ObjectStorageService = ServicioAlmacenamientoObjetos
+storage_service = servicio_almacenamiento

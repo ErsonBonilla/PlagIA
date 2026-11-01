@@ -278,7 +278,7 @@ def test_endpoints_fastapi_empresarial():
         )
         assert r_orto.status_code == 200
         datos_orto = r_orto.json()
-        assert datos_orto["status"] == "COMPLETED"
+        assert datos_orto["status"] == "COMPLETADO"
         assert datos_orto["total_patches"] >= 4
 
         # 7. Consulta del Mapa de Calor GeoJSON (RFC 7946)

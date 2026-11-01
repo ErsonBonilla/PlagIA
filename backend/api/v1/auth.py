@@ -1,5 +1,9 @@
 """
 Endpoints de Autenticación Empresarial JWT (/api/v1/auth).
+
+Aplica la Regla de Oro:
+- Funciones, variables y mensajes de error internos en español.
+- Rutas REST y esquemas del contrato JSON (`access_token`, `token_type`) en inglés.
 """
 
 from __future__ import annotations
@@ -7,36 +11,36 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.core.security import (
-    authenticate_user,
-    create_access_token,
-    get_optional_current_user,
+    autenticar_usuario,
+    crear_token_acceso,
+    obtener_usuario_actual_opcional,
 )
-from backend.schemas.api_schemas import TokenRequest, TokenResponse
+from backend.schemas.api_schemas import RespuestaToken, SolicitudToken
 
 router = APIRouter(prefix="/auth", tags=["Seguridad y Roles"])
 
 
-@router.post("/token", response_model=TokenResponse)
-def login_for_access_token(payload: TokenRequest):
-    user = authenticate_user(payload.username, payload.password)
-    if user is None:
+@router.post("/token", response_model=RespuestaToken)
+def iniciar_sesion_para_token(carga: SolicitudToken):
+    usuario = autenticar_usuario(carga.username, carga.password)
+    if usuario is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas. Verifique usuario y contraseña corporativa.",
+            detail="Credenciales inválidas. Verifique su usuario y contraseña corporativa.",
         )
-    token = create_access_token(
-        subject=user["username"],
-        role=user["role"],
-        district=user["district"],
+    token = crear_token_acceso(
+        sujeto=usuario["usuario"],
+        rol=usuario["rol"],
+        distrito=usuario["distrito"],
     )
-    return TokenResponse(
+    return RespuestaToken(
         access_token=token,
-        role=user["role"],
-        district=user["district"],
-        full_name=user["full_name"],
+        role=usuario["rol"],
+        district=usuario["distrito"],
+        full_name=usuario["nombre_completo"],
     )
 
 
 @router.get("/me")
-def get_current_operator_profile(user: dict = Depends(get_optional_current_user)):
-    return user
+def obtener_perfil_operador_actual(usuario: dict = Depends(obtener_usuario_actual_opcional)):
+    return usuario

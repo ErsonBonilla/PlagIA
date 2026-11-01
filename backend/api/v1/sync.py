@@ -1,5 +1,9 @@
 """
 Endpoints de Sincronización Offline-First y Actualización OTA para la App Móvil Flutter (/api/v1/sync).
+
+Aplica la Regla de Oro:
+- Lógica interna, modelo `DeteccionFitosanitariaORM` y etiquetas en español.
+- Contrato JSON de sincronización conservado en inglés.
 """
 
 from __future__ import annotations
@@ -10,74 +14,79 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from backend.core.database import PhytosanitaryDetectionORM, get_db
+from backend.core.database import DeteccionFitosanitariaORM, obtener_sesion_bd
 from backend.schemas.api_schemas import (
-    OfflineBatchSyncRequest,
-    OfflineBatchSyncResponse,
+    RespuestaSincronizacionLoteOffline,
+    SolicitudSincronizacionLoteOffline,
 )
-from ml_engine.config import MODEL_METADATA_PATH, normalizar_etiqueta_espanol
-from ml_engine.exporter import ensure_default_artifacts_exist
+from ml_engine.config import RUTA_METADATOS_MODELO, normalizar_etiqueta_espanol
+from ml_engine.exporter import asegurar_artefactos_por_defecto
 
 router = APIRouter(prefix="/sync", tags=["Sincronización Offline-First (Flutter Edge-AI)"])
 
 
-@router.post("/batch", response_model=OfflineBatchSyncResponse)
-def sync_offline_records_batch(payload: OfflineBatchSyncRequest, db: Session = Depends(get_db)):
+@router.post("/batch", response_model=RespuestaSincronizacionLoteOffline)
+def sincronizar_lote_registros_offline(
+    carga: SolicitudSincronizacionLoteOffline,
+    sesion: Session = Depends(obtener_sesion_bd),
+):
     """Recibe el lote de diagnósticos recolectados sin internet por la App Flutter en el campo."""
-    synced_ids: list[str] = []
-    target_lot = "LOTE-ESPINAL-01"
+    ids_sincronizados: list[str] = []
+    lote_objetivo = "LOTE-ESPINAL-01"
 
-    for item in payload.records:
-        target_lot = item.lot_id
-        etiqueta_es = normalizar_etiqueta_espanol(item.disease_label)
-        existing = (
-            db.query(PhytosanitaryDetectionORM)
-            .filter(PhytosanitaryDetectionORM.client_record_id == item.client_record_id)
+    for elemento in carga.records:
+        lote_objetivo = elemento.lot_id
+        etiqueta_es = normalizar_etiqueta_espanol(elemento.disease_label)
+        existente = (
+            sesion.query(DeteccionFitosanitariaORM)
+            .filter(DeteccionFitosanitariaORM.id_registro_cliente == elemento.client_record_id)
             .first()
         )
-        if existing is None:
-            db.add(
-                PhytosanitaryDetectionORM(
-                    client_record_id=item.client_record_id,
-                    lot_id=item.lot_id,
-                    source_type="MOVIL_OFFLINE",
-                    disease_label=etiqueta_es,
-                    confidence=item.confidence,
-                    severity_index=item.severity_index,
-                    latitude=item.latitude,
-                    longitude=item.longitude,
-                    point_wkt=f"POINT({item.longitude} {item.latitude})",
-                    model_version=item.model_version,
-                    captured_at=item.captured_at or datetime.now(timezone.utc),
+        if existente is None:
+            sesion.add(
+                DeteccionFitosanitariaORM(
+                    id_registro_cliente=elemento.client_record_id,
+                    lote_id=elemento.lot_id,
+                    tipo_fuente="MOVIL_OFFLINE",
+                    etiqueta_enfermedad=etiqueta_es,
+                    confianza=elemento.confidence,
+                    indice_severidad=elemento.severity_index,
+                    latitud=elemento.latitude,
+                    longitud=elemento.longitude,
+                    punto_wkt=f"POINT({elemento.longitude} {elemento.latitude})",
+                    version_modelo=elemento.model_version,
+                    capturado_en=elemento.captured_at or datetime.now(timezone.utc),
                 )
             )
-        synced_ids.append(item.client_record_id)
+        ids_sincronizados.append(elemento.client_record_id)
 
-    db.commit()
+    sesion.commit()
 
-    lot_records = (
-        db.query(PhytosanitaryDetectionORM)
-        .filter(PhytosanitaryDetectionORM.lot_id == target_lot)
+    registros_lote = (
+        sesion.query(DeteccionFitosanitariaORM)
+        .filter(DeteccionFitosanitariaORM.lote_id == lote_objetivo)
         .all()
     )
-    total = len(lot_records)
-    infested = sum(
-        1 for r in lot_records if normalizar_etiqueta_espanol(r.disease_label) != "sano"
+    total = len(registros_lote)
+    infestados = sum(
+        1
+        for r in registros_lote
+        if normalizar_etiqueta_espanol(r.etiqueta_enfermedad) != "sano"
     )
-    infection_rate = round(infested / max(1, total), 4)
+    tasa_infestacion = round(infestados / max(1, total), 4)
 
-    return OfflineBatchSyncResponse(
-        device_id=payload.device_id,
-        received_count=len(payload.records),
-        synced_ids=synced_ids,
-        lot_updated_infection_rate=infection_rate,
+    return RespuestaSincronizacionLoteOffline(
+        device_id=carga.device_id,
+        received_count=len(carga.records),
+        synced_ids=ids_sincronizados,
+        lot_updated_infection_rate=tasa_infestacion,
         server_timestamp=datetime.now(timezone.utc),
     )
 
 
 @router.get("/mobile-model")
-def get_mobile_edge_model_manifest():
+def obtener_manifiesto_modelo_movil():
     """Entrega el manifiesto OTA del modelo ONNX INT8 embebido para dispositivos Flutter."""
-    if not MODEL_METADATA_PATH.exists():
-        ensure_default_artifacts_exist()
-    return json.loads(MODEL_METADATA_PATH.read_text(encoding="utf-8"))
+    if not RUTA_METADATOS_MODELO.exists():
+        asegurar_artefactos_por_defecto()
+    return json.loads(RUTA_METADATOS_MODELO.read_text(encoding="utf-8"))

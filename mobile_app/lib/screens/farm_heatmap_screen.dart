@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/inspection_record.dart';
 
 /// Visor Interactivo de Mapa de Calor Fitosanitario del Lote Arrocero.
-///
-/// Todas las etiquetas de patologías y zonas de severidad están en español
-/// cumpliendo la Regla de Oro de PlagIA.
-class FarmHeatmapScreen extends StatelessWidget {
-  final List<InspectionRecord> records;
+class PantallaMapaCalorFinca extends StatelessWidget {
+  final List<RegistroInspeccion> registros;
 
-  const FarmHeatmapScreen({super.key, required this.records});
+  const PantallaMapaCalorFinca({super.key, required this.registros});
 
   static const List<Map<String, dynamic>> _celdasCuadriculaBase = [
     {'sector': 'A1 (Noroeste)', 'etiqueta': 'sano', 'severidad': 0.06},
@@ -90,11 +87,11 @@ class FarmHeatmapScreen extends StatelessWidget {
           itemBuilder: (context, index) {
             final celda = _celdasCuadriculaBase[index];
             final double sev = (celda['severidad'] as num).toDouble();
-            final Color bg = _colorPorSeveridad(sev);
+            final Color colorFondo = _colorPorSeveridad(sev);
             return Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: bg.withValues(alpha: 0.88),
+                color: colorFondo.withValues(alpha: 0.88),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: Colors.black26),
               ),
@@ -132,13 +129,13 @@ class FarmHeatmapScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'Puntos Georreferenciados Capturados en Campo (${records.length})',
+          'Puntos Georreferenciados Capturados en Campo (${registros.length})',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 8),
-        if (records.isEmpty)
+        if (registros.isEmpty)
           const Card(
             child: Padding(
               padding: EdgeInsets.all(12),
@@ -148,20 +145,22 @@ class FarmHeatmapScreen extends StatelessWidget {
             ),
           )
         else
-          ...records.map(
+          ...registros.map(
             (r) => Card(
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: _colorPorSeveridad(r.severityIndex),
+                  backgroundColor: _colorPorSeveridad(r.indiceSeveridad),
                   child: const Icon(Icons.location_on, color: Colors.white),
                 ),
-                title: Text('${r.commonName} (${r.diseaseLabel} - ${r.lotId})'),
+                title: Text(
+                  '${r.nombreComun} (${r.etiquetaEnfermedad} - ${r.idLote})',
+                ),
                 subtitle: Text(
-                  'GPS: ${r.latitude}, ${r.longitude} | Severidad: ${r.severityIndex}',
+                  'GPS: ${r.latitud}, ${r.longitud} | Severidad: ${r.indiceSeveridad}',
                 ),
                 trailing: Icon(
-                  r.isSynced ? Icons.cloud_done : Icons.cloud_upload_outlined,
-                  color: r.isSynced ? Colors.green : Colors.orange,
+                  r.sincronizado ? Icons.cloud_done : Icons.cloud_upload_outlined,
+                  color: r.sincronizado ? Colors.green : Colors.orange,
                 ),
               ),
             ),
@@ -185,3 +184,5 @@ class FarmHeatmapScreen extends StatelessWidget {
     );
   }
 }
+
+typedef FarmHeatmapScreen = PantallaMapaCalorFinca;

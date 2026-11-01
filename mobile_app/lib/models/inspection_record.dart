@@ -1,47 +1,55 @@
-class InspectionRecord {
-  final String clientRecordId;
-  final String lotId;
-  final String diseaseLabel;
-  final String commonName;
-  final String causalAgent;
-  final double confidence;
-  final double severityIndex;
-  final String riskLevel;
-  final String mipRecommendation;
-  final double latitude;
-  final double longitude;
-  final DateTime capturedAt;
-  final String modelVersion;
-  bool isSynced;
+/// Entidad interna de inspección fitosanitaria georreferenciada.
+///
+/// Aplica la Regla de Oro:
+/// - Propiedades internas de negocio en español.
+/// - Claves del contrato JSON en `toSyncJson()` conservadas en inglés para `/api/v1/sync/batch`.
+class RegistroInspeccion {
+  final String idRegistroCliente;
+  final String idLote;
+  final String etiquetaEnfermedad;
+  final String nombreComun;
+  final String agenteCausal;
+  final double confianza;
+  final double indiceSeveridad;
+  final String nivelRiesgo;
+  final String recomendacionMip;
+  final double latitud;
+  final double longitud;
+  final DateTime capturadoEn;
+  final String versionModelo;
+  bool sincronizado;
 
-  InspectionRecord({
-    required this.clientRecordId,
-    required this.lotId,
-    required this.diseaseLabel,
-    required this.commonName,
-    required this.causalAgent,
-    required this.confidence,
-    required this.severityIndex,
-    required this.riskLevel,
-    required this.mipRecommendation,
-    required this.latitude,
-    required this.longitude,
-    required this.capturedAt,
-    required this.modelVersion,
-    this.isSynced = false,
+  RegistroInspeccion({
+    required this.idRegistroCliente,
+    required this.idLote,
+    required this.etiquetaEnfermedad,
+    required this.nombreComun,
+    required this.agenteCausal,
+    required this.confianza,
+    required this.indiceSeveridad,
+    required this.nivelRiesgo,
+    required this.recomendacionMip,
+    required this.latitud,
+    required this.longitud,
+    required this.capturadoEn,
+    required this.versionModelo,
+    this.sincronizado = false,
   });
 
+  /// Serializa al contrato JSON externo esperado por `POST /api/v1/sync/batch`.
   Map<String, dynamic> toSyncJson() {
     return {
-      'client_record_id': clientRecordId,
-      'lot_id': lotId,
-      'disease_label': diseaseLabel,
-      'confidence': confidence,
-      'severity_index': severityIndex,
-      'latitude': latitude,
-      'longitude': longitude,
-      'captured_at': capturedAt.toUtc().toIso8601String(),
-      'model_version': modelVersion,
+      'client_record_id': idRegistroCliente,
+      'lot_id': idLote,
+      'disease_label': etiquetaEnfermedad,
+      'confidence': confianza,
+      'severity_index': indiceSeveridad,
+      'latitude': latitud,
+      'longitude': longitud,
+      'captured_at': capturadoEn.toUtc().toIso8601String(),
+      'model_version': versionModelo,
     };
   }
 }
+
+typedef InspectionRecord = RegistroInspeccion;
