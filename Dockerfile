@@ -34,7 +34,7 @@ RUN uv python install 3.12 && \
     uv sync --python 3.12 --no-install-project
 
 # Copiar el codigo fuente empresarial
-COPY ml_engine ./ml_engine
+COPY engine ./engine
 COPY backend ./backend
 COPY scripts ./scripts
 COPY README.md ./

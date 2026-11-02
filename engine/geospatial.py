@@ -25,7 +25,7 @@ from rasterio.transform import from_bounds
 from rasterio.windows import Window
 from shapely.geometry import Point, box
 
-from ml_engine.config import (
+from engine.config import (
     CATALOGO_AGRONOMICO,
     DIR_ARTEFACTOS,
     ZONAS_ARROCERAS_TOLIMA,

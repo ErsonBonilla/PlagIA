@@ -4,7 +4,7 @@
 
 La plataforma **PlagIA** sigue una arquitectura hexagonal y de microservicios contenerizados, dividida en tres subsistemas desacoplados:
 
-1. **`ml_engine/` (Subsistema de Inteligencia Artificial, MLOps y Geoprocesamiento):**
+1. **`engine/` (Subsistema de Inteligencia Artificial, MLOps y Geoprocesamiento):**
    * Responsable de la ingesta gobernada desde `dataset/`, preprocesamiento radiométrico con OpenCV (`CLAHE`) y Albumentations, entrenamiento con **PyTorch (AMP FP16)** y **Ultralytics YOLO**, seguimiento en **MLflow**, exportación/cuantización **ONNX** y generación de **Mapas de Calor Geoespaciales** con Rasterio y GeoPandas.
 2. **`backend/` (Subsistema Backend API y Procesamiento Asíncrono):**
    * Construido sobre **FastAPI**, **Celery + Redis**, **PostgreSQL + PostGIS** y **MinIO**. Incluye modo de alta disponibilidad híbrido: opera conectándose al clúster de contenedores Docker o en modo autónomo local (fallback transparente a SQLite/disco y ejecución en proceso) para desarrollo ágil y pruebas CI/CD.

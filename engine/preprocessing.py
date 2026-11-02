@@ -19,7 +19,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from ml_engine.config import IMAGENET_MEAN, IMAGENET_STD, TAMANO_IMAGEN, TAMANO_LOTE
+from engine.config import IMAGENET_MEAN, IMAGENET_STD, TAMANO_IMAGEN, TAMANO_LOTE
 
 
 def aplicar_correccion_radiometrica_clahe(

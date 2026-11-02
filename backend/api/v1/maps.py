@@ -18,8 +18,8 @@ from backend.core.database import (
     obtener_sesion_bd,
 )
 from backend.schemas.api_schemas import RespuestaMapaCalorGeoJSON
-from ml_engine.config import AVISO_AGRONOMICO
-from ml_engine.geospatial import (
+from engine.config import AVISO_AGRONOMICO
+from engine.geospatial import (
     construir_geodataframe_mapa_calor,
     exportar_artefactos_mapa_calor,
 )

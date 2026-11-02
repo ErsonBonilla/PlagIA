@@ -14,7 +14,7 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from ml_engine.config import RAIZ_PROYECTO
+from engine.config import RAIZ_PROYECTO
 
 
 class ConfiguracionEmpresarial(BaseSettings):

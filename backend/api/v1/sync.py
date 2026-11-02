@@ -19,8 +19,8 @@ from backend.schemas.api_schemas import (
     RespuestaSincronizacionLoteOffline,
     SolicitudSincronizacionLoteOffline,
 )
-from ml_engine.config import RUTA_METADATOS_MODELO, normalizar_etiqueta_espanol
-from ml_engine.exporter import asegurar_artefactos_por_defecto
+from engine.config import RUTA_METADATOS_MODELO, normalizar_etiqueta_espanol
+from engine.exporter import asegurar_artefactos_por_defecto
 
 router = APIRouter(prefix="/sync", tags=["Sincronización Offline-First (Flutter Edge-AI)"])
 

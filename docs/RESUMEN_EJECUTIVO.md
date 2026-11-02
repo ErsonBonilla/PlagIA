@@ -27,7 +27,7 @@ La plataforma opera sobre un repositorio de datos multinivel ubicado en `dataset
 | **Nivel Entomológico (Plagas)** | *Rice Agricultural Pests Dataset* | 991 imágenes | 9 órdenes/especies (`stem_borer`, `armyworm`, `aphids`, `mites`, `grasshopper`, etc.) |
 
 ### Hallazgo Crítico de Auditoría de Datos (Prevención de *Data Leakage*)
-Durante la auditoría automatizada implementada en `ml_engine/data_governance.py`, se identificó que el particionado `Train/` y `Test/` original del dataset de drones contiene:
+Durante la auditoría automatizada implementada en `engine/data_governance.py`, se identificó que el particionado `Train/` y `Test/` original del dataset de drones contiene:
 1. **Archivos duplicados exactos** (sufijos ` - Copy.jpg` dentro de las carpetas de entrenamiento).
 2. **Aumentaciones offline cruzadas (`augmented__<capture_id>_<hash>.jpg`):** Múltiples variaciones generadas a partir de la misma captura base aparecen simultáneamente en `Train/` y `Test/`.
 
@@ -55,7 +55,7 @@ La arquitectura de **PlagIA** fue diseñada bajo cuatro restricciones operativas
 
 ## 4. Diseño del Modelo y Estrategia de Entrenamiento en Dos Fases
 
-El motor `ml_engine/architectures.py` implementa Transfer Learning sobre pesos preentrenados en ImageNet siguiendo una estrategia industrial de dos etapas registradas en **MLflow**:
+El motor `engine/architectures.py` implementa Transfer Learning sobre pesos preentrenados en ImageNet siguiendo una estrategia industrial de dos etapas registradas en **MLflow**:
 
 * **Fase A (Backbone Congelado - Adaptación del Cabezal Fitosanitario):** Se congelan todas las capas convolucionales base y se entrena únicamente el cabezal clasificador (`GlobalAveragePooling` $\rightarrow$ `BatchNorm` $\rightarrow$ `Dropout` $\rightarrow$ `Linear`) con tasa de aprendizaje moderada (`1e-3`). Esto estabiliza los pesos iniciales sin destruir los extractores de bordes y texturas.
 * **Fase B (Fine-Tuning Selectivo con Preprocesamiento CLAHE):** Se descongelan los bloques profundos (`layer4` en ResNet50 / bloques superiores en EfficientNet) con un *learning rate* reducido (`1e-4` a `1e-5`), adaptando los filtros a la reflectancia clorofílica del arroz previamente normalizada mediante ecualización adaptativa de histograma **CLAHE en espacio LAB (OpenCV)**.
@@ -64,7 +64,7 @@ El motor `ml_engine/architectures.py` implementa Transfer Learning sobre pesos p
 
 ## 5. Métricas de Desempeño y Criterio de Selección
 
-En vigilancia fitosanitaria, evaluar únicamente con *Accuracy* es riesgoso: omitir un foco primario de *Piricularia* o *Roya* (**Falso Negativo**) permite la propagación exponencial del patógeno hacia lotes vecinos. Por tanto, el criterio corporativo de selección en `ml_engine/evaluation.py` prioriza:
+En vigilancia fitosanitaria, evaluar únicamente con *Accuracy* es riesgoso: omitir un foco primario de *Piricularia* o *Roya* (**Falso Negativo**) permite la propagación exponencial del patógeno hacia lotes vecinos. Por tanto, el criterio corporativo de selección en `engine/evaluation.py` prioriza:
 1. **F1-Score Macro:** Equilibrio global entre precisión y sensibilidad en todas las clases fitosanitarias.
 2. **Recall de Clases Críticas (Sensibilidad Fitosanitaria):** Maximizar la detección de hojas/parches enfermos.
 3. **ROC-AUC Multiclase (One-vs-Rest):** Capacidad discriminativa independientemente del umbral de corte.

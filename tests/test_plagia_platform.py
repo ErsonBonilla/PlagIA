@@ -23,12 +23,12 @@ import numpy as np
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from ml_engine.architectures import (
+from engine.architectures import (
     DetectorFitosanitarioYOLO,
     auditar_salud_neuronas,
     construir_clasificador_pytorch,
 )
-from ml_engine.config import (
+from engine.config import (
     CLASES_CAMPO_HOJA,
     CLASES_DRON,
     DIR_ASSETS_MOVIL,
@@ -41,7 +41,7 @@ from ml_engine.config import (
     RUTA_MODELO_ONNX_SERVIDOR,
     RUTA_MODELO_PYTORCH,
 )
-from ml_engine.data_governance import (
+from engine.data_governance import (
     auditar_fuga_datos,
     cargar_manifiesto_dominio_curado,
     construir_manifiesto_dron,
@@ -49,14 +49,14 @@ from ml_engine.data_governance import (
     obtener_resumen_curaduria,
     particionar_manifiesto_agrupado,
 )
-from ml_engine.exporter import asegurar_artefactos_por_defecto
-from ml_engine.geospatial import (
+from engine.exporter import asegurar_artefactos_por_defecto
+from engine.geospatial import (
     construir_geodataframe_mapa_calor,
     crear_ortomosaico_geotiff_muestra,
     exportar_artefactos_mapa_calor,
     seccionar_ortomosaico_en_parches,
 )
-from ml_engine.preprocessing import (
+from engine.preprocessing import (
     aplicar_correccion_radiometrica_clahe,
     preprocesar_para_inferencia,
 )

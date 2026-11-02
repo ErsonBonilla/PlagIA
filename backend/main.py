@@ -22,7 +22,7 @@ from backend.core.database import (
 from backend.core.storage import servicio_almacenamiento
 from backend.schemas.api_schemas import RespuestaEstadoSalud
 from backend.services.inference_service import inference_service
-from ml_engine.config import AVISO_AGRONOMICO
+from engine.config import AVISO_AGRONOMICO
 
 
 @asynccontextmanager

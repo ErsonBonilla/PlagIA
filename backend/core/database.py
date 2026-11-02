@@ -28,7 +28,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from backend.core.config import configuracion
-from ml_engine.config import ZONAS_ARROCERAS_TOLIMA
+from engine.config import ZONAS_ARROCERAS_TOLIMA
 
 
 def construir_motor_bd_resiliente() -> tuple[Engine, str]:

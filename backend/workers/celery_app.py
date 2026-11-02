@@ -21,8 +21,8 @@ from backend.core.database import (
     TrabajoOrtomosaicoORM,
 )
 from backend.services.inference_service import inference_service
-from ml_engine.config import DIR_ARTEFACTOS
-from ml_engine.geospatial import (
+from engine.config import DIR_ARTEFACTOS
+from engine.geospatial import (
     construir_geodataframe_mapa_calor,
     crear_ortomosaico_geotiff_muestra,
     exportar_artefactos_mapa_calor,

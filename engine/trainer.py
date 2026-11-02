@@ -21,13 +21,13 @@ from mlflow.models import infer_signature
 from sklearn.utils.class_weight import compute_class_weight
 from torch.utils.data import DataLoader
 
-from ml_engine.architectures import (
+from engine.architectures import (
     construir_clasificador_pytorch,
     fijar_semillas_reproducibles,
     liberar_memoria_cuda,
     obtener_dispositivo_computo,
 )
-from ml_engine.config import (
+from engine.config import (
     AMP_FP16,
     CANALES_IMAGEN,
     CLASES_DRON,
@@ -37,7 +37,7 @@ from ml_engine.config import (
     SEMILLA,
     TAMANO_IMAGEN,
 )
-from ml_engine.evaluation import (
+from engine.evaluation import (
     calcular_metricas_multiclase,
     generar_reporte_clasificacion_texto,
     guardar_grafica_curvas_entrenamiento,

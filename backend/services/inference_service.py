@@ -15,8 +15,8 @@ import numpy as np
 import onnxruntime as ort
 import torch
 
-from ml_engine.architectures import DetectorFitosanitarioYOLO
-from ml_engine.config import (
+from engine.architectures import DetectorFitosanitarioYOLO
+from engine.config import (
     AVISO_AGRONOMICO,
     CATALOGO_AGRONOMICO,
     CLASES_CAMPO_HOJA,
@@ -28,8 +28,8 @@ from ml_engine.config import (
     USAR_CUDA,
     normalizar_etiqueta_espanol,
 )
-from ml_engine.exporter import asegurar_artefactos_por_defecto
-from ml_engine.preprocessing import (
+from engine.exporter import asegurar_artefactos_por_defecto
+from engine.preprocessing import (
     cargar_y_preparar_imagen,
     evaluar_dominio_arroz_e_incertidumbre,
     preprocesar_para_inferencia,

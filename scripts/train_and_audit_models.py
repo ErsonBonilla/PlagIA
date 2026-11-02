@@ -23,12 +23,12 @@ import mlflow
 from mlflow.tracking import MlflowClient
 import torch
 
-from ml_engine.architectures import (
+from engine.architectures import (
     auditar_salud_neuronas,
     construir_clasificador_pytorch,
     obtener_dispositivo_computo,
 )
-from ml_engine.config import (
+from engine.config import (
     CLASES_CAMPO_HOJA,
     CLASES_DRON,
     DIR_MODELOS,
@@ -48,15 +48,15 @@ from ml_engine.config import (
     SEMILLA,
     TAMANO_LOTE,
 )
-from ml_engine.data_governance import (
+from engine.data_governance import (
     cargar_manifiesto_dominio_curado,
     construir_manifiesto_multinivel,
     crear_subconjunto_balanceado,
     particionar_manifiesto_agrupado,
 )
-from ml_engine.exporter import exportar_pytorch_a_onnx
-from ml_engine.preprocessing import construir_cargadores_datos
-from ml_engine.trainer import entrenar_y_registrar_mlflow
+from engine.exporter import exportar_pytorch_a_onnx
+from engine.preprocessing import construir_cargadores_datos
+from engine.trainer import entrenar_y_registrar_mlflow
 
 
 def entrenar_y_auditar_ambos_dominios() -> dict:

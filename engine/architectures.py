@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 from torchvision import models
 
-from ml_engine.config import CLASES_DRON, SEMILLA, USAR_CUDA, normalizar_etiqueta_espanol
+from engine.config import CLASES_DRON, SEMILLA, USAR_CUDA, normalizar_etiqueta_espanol
 
 
 def fijar_semillas_reproducibles(semilla: int = SEMILLA) -> None:

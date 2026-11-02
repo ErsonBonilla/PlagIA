@@ -14,8 +14,8 @@ __pycache__/
 # Datasets de imagenes y manifiestos pesados (se conserva reporte de curaduria)
 dataset/*
 !dataset/reporte_curaduria.json
-ml_engine/data/manifest*.csv
-ml_engine/data/manifiesto*.csv
+engine/data/manifest*.csv
+engine/data/manifiesto*.csv
 artifacts/
 storage_local/
 

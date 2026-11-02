@@ -21,8 +21,8 @@ import onnxruntime as ort
 import torch
 import torch.nn as nn
 
-from ml_engine.architectures import construir_clasificador_pytorch
-from ml_engine.config import (
+from engine.architectures import construir_clasificador_pytorch
+from engine.config import (
     AVISO_AGRONOMICO,
     CANALES_IMAGEN,
     CATALOGO_AGRONOMICO,

@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ml_engine.config import (
+from engine.config import (
     CLASES_DRON,
     CLASES_MULTINIVEL,
     DIR_CURADO_CAMPO_HOJA,

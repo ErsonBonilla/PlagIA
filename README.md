@@ -39,7 +39,7 @@ PlagIA/
 │   ├── wsl2_setup.sh            # Aprovisionamiento automático en WSL 2 (Ubuntu + uv + CUDA)
 │   ├── check_wsl2_cuda.py       # Diagnóstico de GPU RTX 3050, Tensor Cores AMP FP16 y ONNX Runtime
 │   └── setup_flutter_android.ps1# Vinculación con Android Studio y validación de Flutter/Dart
-├── ml_engine/                   # Motor de IA, MLOps y Geoprocesamiento
+├── engine/                   # Motor de IA, MLOps y Geoprocesamiento
 │   ├── config.py                # Parámetros globales, clases fitosanitarias y polígonos del Tolima
 │   ├── data_governance.py       # Manifiesto multinivel (Pandas + PySpark), control de leakage y split 70/15/15
 │   ├── preprocessing.py         # Filtro radiométrico CLAHE (OpenCV), Albumentations y DataLoaders PyTorch
@@ -92,7 +92,7 @@ uv run python scripts/check_wsl2_cuda.py
 ```
 
 ### C. Ejecutar el Pipeline de Ingeniería de IA y Exportación ONNX
-Puedes ejecutar los 4 cuadernos en orden dentro de `ml_engine/notebooks/` (`01` $\rightarrow$ `04`) con `uv run jupyter lab`, o correr las pruebas e inicialización rápida desde terminal:
+Puedes ejecutar los 4 cuadernos en orden dentro de `engine/notebooks/` (`01` $\rightarrow$ `04`) con `uv run jupyter lab`, o correr las pruebas e inicialización rápida desde terminal:
 ```bash
 # Levantar interfaz de MLflow Tracking & Registry
 uv run mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
