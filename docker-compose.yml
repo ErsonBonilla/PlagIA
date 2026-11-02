@@ -130,11 +130,11 @@ services:
               count: all
               capabilities: [gpu]
 
-  web_fresh:
+  frontend:
     build:
-      context: ./web_fresh
+      context: ./frontend
       dockerfile: Dockerfile
-    container_name: plagia-web-fresh
+    container_name: plagia-frontend
     restart: unless-stopped
     environment:
       PORT: "3000"

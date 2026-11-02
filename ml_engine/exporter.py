@@ -4,7 +4,7 @@ Dinámica INT8 para Flutter Mobile Edge-AI) y Benchmark de Latencia GPU/CPU.
 
 Soluciona la limitación de rutas no-ASCII de `onnxruntime.quantization` en Windows
 ejecutando la cuantización dinámica sobre un directorio temporal ASCII y copiando el
-artefacto cuantizado (reducción ~75% de peso) hacia `models/` y `mobile_app/assets/models/`.
+artefacto cuantizado (reducción ~75% de peso) hacia `models/` y `mobile/assets/models/`.
 """
 
 from __future__ import annotations

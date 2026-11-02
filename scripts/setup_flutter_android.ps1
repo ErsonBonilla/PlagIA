@@ -22,8 +22,8 @@ Write-Host "`n[1/3] Verificando versiones de Flutter y Dart..." -ForegroundColor
 flutter --version
 dart --version
 
-Write-Host "`n[2/3] Inicializando dependencias en mobile_flutter/..." -ForegroundColor Yellow
-Push-Location "$PSScriptRoot\..\mobile_flutter"
+Write-Host "`n[2/3] Inicializando dependencias en mobile/..." -ForegroundColor Yellow
+Push-Location "$PSScriptRoot\..\mobile"
 flutter pub get
 Write-Host "`n[3/3] Ejecutando analisis estatico de codigo Dart (dart analyze)..." -ForegroundColor Yellow
 dart analyze
@@ -31,5 +31,5 @@ Pop-Location
 
 Write-Host "`n============================================================================" -ForegroundColor Cyan
 Write-Host " Proyecto Flutter listo para abrir en Android Studio:" -ForegroundColor Green
-Write-Host "   Ruta: C:\Users\erson\Documents\Programación\ISIDEAD\PlagIA\mobile_flutter" -ForegroundColor White
+Write-Host "   Ruta: C:\Users\erson\Documents\Programación\ISIDEAD\PlagIA\mobile" -ForegroundColor White
 Write-Host "============================================================================" -ForegroundColor Cyan

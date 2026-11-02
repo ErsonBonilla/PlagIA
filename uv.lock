@@ -2264,12 +2264,8 @@ dependencies = [
     { name = "fastapi" },
     { name = "geoalchemy2" },
     { name = "geopandas" },
-    { name = "httpx" },
-    { name = "ipykernel" },
-    { name = "jupyter" },
     { name = "matplotlib" },
     { name = "minio" },
-    { name = "mlflow" },
     { name = "numpy" },
     { name = "onnx" },
     { name = "onnxruntime-gpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
@@ -2282,13 +2278,10 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt" },
     { name = "pyproj" },
-    { name = "pyspark" },
-    { name = "pytest" },
     { name = "python-multipart" },
     { name = "rasterio" },
     { name = "redis" },
     { name = "scikit-learn" },
-    { name = "seaborn" },
     { name = "shapely" },
     { name = "sqlalchemy" },
     { name = "torch", version = "2.14.1+cu126", source = { registry = "https://download.pytorch.org/whl/cu126" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
@@ -2300,6 +2293,19 @@ dependencies = [
     { name = "uvicorn", extra = ["standard"] },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "pytest" },
+]
+mlops = [
+    { name = "ipykernel" },
+    { name = "jupyter" },
+    { name = "mlflow" },
+    { name = "pyspark" },
+    { name = "seaborn" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "albumentations", specifier = ">=1.4.0" },
@@ -2307,12 +2313,8 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "geoalchemy2", specifier = ">=0.15.2" },
     { name = "geopandas", specifier = ">=1.0.0" },
-    { name = "httpx", specifier = ">=0.27.2" },
-    { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "jupyter", specifier = ">=1.1.1" },
     { name = "matplotlib", specifier = ">=3.9.0" },
     { name = "minio", specifier = ">=7.2.9" },
-    { name = "mlflow", specifier = ">=2.17.0" },
     { name = "numpy", specifier = ">=1.26.4,<2.2.0" },
     { name = "onnx", specifier = ">=1.17.0" },
     { name = "onnxruntime-gpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'", specifier = ">=1.20.0" },
@@ -2325,13 +2327,10 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.6.0" },
     { name = "pyjwt", specifier = ">=2.9.0" },
     { name = "pyproj", specifier = ">=3.7.0" },
-    { name = "pyspark", specifier = ">=3.5.3" },
-    { name = "pytest", specifier = ">=8.3.3" },
     { name = "python-multipart", specifier = ">=0.0.12" },
     { name = "rasterio", specifier = ">=1.4.0" },
     { name = "redis", specifier = ">=5.2.0" },
     { name = "scikit-learn", specifier = ">=1.5.0" },
-    { name = "seaborn", specifier = ">=0.13.0" },
     { name = "shapely", specifier = ">=2.0.0" },
     { name = "sqlalchemy", specifier = ">=2.0.35" },
     { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32'", specifier = ">=2.5.0" },
@@ -2340,6 +2339,19 @@ requires-dist = [
     { name = "torchvision", marker = "sys_platform == 'linux' or sys_platform == 'win32'", specifier = ">=0.20.0", index = "https://download.pytorch.org/whl/cu126" },
     { name = "ultralytics", specifier = ">=8.3.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "httpx", specifier = ">=0.27.2" },
+    { name = "pytest", specifier = ">=8.3.3" },
+]
+mlops = [
+    { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "jupyter", specifier = ">=1.1.1" },
+    { name = "mlflow", specifier = ">=2.17.0" },
+    { name = "pyspark", specifier = ">=3.5.3" },
+    { name = "seaborn", specifier = ">=0.13.0" },
 ]
 
 [[package]]

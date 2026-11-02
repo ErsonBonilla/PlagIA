@@ -80,7 +80,7 @@ Cada experimento ejecutado en `03_training_pytorch_yolo_mlflow.ipynb` registra e
 * Artefactos visuales: Matriz de Confusión normalizada, Curvas ROC por patología y reporte tabular.
 * Firma formal de entrada/salida (*Model Signature*).
 
-En `04_registry_onnx_and_heatmaps.ipynb`, el modelo con mayor **F1-Macro y Recall** se registra formalmente como `plagia_rice_classifier`, se promueve al stage **`Staging`** y se compila automáticamente a `models/plagia_server.onnx` y `models/plagia_mobile_int8.onnx` (sincronizado también hacia `mobile_app/assets/models/`).
+En `04_registro_onnx_y_mapas_calor.ipynb`, el modelo con mayor **F1-Macro y Recall** se registra formalmente como `plagia_rice_classifier`, se promueve al stage **`Staging`** y se compila automáticamente a `models/plagia_server_fp32.onnx` y `models/plagia_mobile_int8.onnx` (sincronizado también hacia `mobile/assets/models/`).
 
 ---
 

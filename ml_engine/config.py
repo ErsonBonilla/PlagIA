@@ -54,7 +54,7 @@ DIR_ALMACENAMIENTO_LOCAL = Path(
     os.environ.get("PLAGIA_STORAGE_LOCAL_DIR", str(RAIZ_PROYECTO / "storage_local"))
 )
 STORAGE_LOCAL_DIR = DIR_ALMACENAMIENTO_LOCAL
-DIR_ASSETS_MOVIL = RAIZ_PROYECTO / "mobile_flutter" / "assets" / "models"
+DIR_ASSETS_MOVIL = RAIZ_PROYECTO / "mobile" / "assets" / "models"
 MOBILE_ASSETS_DIR = DIR_ASSETS_MOVIL
 
 DIR_MANIFIESTOS = RAIZ_PROYECTO / "ml_engine" / "data"

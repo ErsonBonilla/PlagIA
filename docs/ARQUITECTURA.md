@@ -8,7 +8,9 @@ La plataforma **PlagIA** sigue una arquitectura hexagonal y de microservicios co
    * Responsable de la ingesta gobernada desde `dataset/`, preprocesamiento radiométrico con OpenCV (`CLAHE`) y Albumentations, entrenamiento con **PyTorch (AMP FP16)** y **Ultralytics YOLO**, seguimiento en **MLflow**, exportación/cuantización **ONNX** y generación de **Mapas de Calor Geoespaciales** con Rasterio y GeoPandas.
 2. **`backend/` (Subsistema Backend API y Procesamiento Asíncrono):**
    * Construido sobre **FastAPI**, **Celery + Redis**, **PostgreSQL + PostGIS** y **MinIO**. Incluye modo de alta disponibilidad híbrido: opera conectándose al clúster de contenedores Docker o en modo autónomo local (fallback transparente a SQLite/disco y ejecución en proceso) para desarrollo ágil y pruebas CI/CD.
-3. **`mobile_app/` (Subsistema Frontend Móvil Offline-First en Flutter / Dart):**
+3. **`frontend/` (Subsistema Portal Web SSR con Arquitectura de Islas en Deno 2.9.5 / TypeScript 6.0.3):**
+   * Portal institucional de bajo consumo de ancho de banda con rutas `/dashboard`, `/lotes`, `/mapas`, `/reportes` e islas interactivas `islands/MapViewer.tsx` (Leaflet + espectro Grad-CAM) e `islands/AnalyticsDashboard.tsx` (FEDEARROZ / AGROSAVIA).
+4. **`mobile/` (Subsistema Móvil Offline-First en Flutter 3.47.9 / Dart 3.13.7):**
    * Aplicación nativa multiplataforma (Android / iOS) preparada para **Android Studio**. Ejecuta inferencia en el borde (**Edge-AI**), captura coordenadas GPS sin señal celular, almacena inspecciones en **SQLite** y renderiza los mapas de calor GeoJSON sobre el lote arrocero.
 
 ---

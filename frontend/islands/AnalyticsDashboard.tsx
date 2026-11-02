@@ -149,21 +149,41 @@ export function renderizarIslaAnalyticsDashboard(): string {
         </tbody>
       </table>
     </div>
+    <p id="estado-telemetria-backend" class="nota-pie">
+      Telemetría del Servidor IA: Sincronizando estado de GPU y Base de Datos con <code>http://localhost:8000/api/v1/health</code>...
+    </p>
 
     <script>
       (function inicializarFiltroTablero() {
         const selector = document.getElementById("filtro-distrito-tablero");
         const tabla = document.getElementById("tabla-distritos-tolima");
-        if (!selector || !tabla) return;
+        const notaTelemetria = document.getElementById("estado-telemetria-backend");
 
-        selector.addEventListener("change", function() {
-          const valor = selector.value;
-          const filas = tabla.querySelectorAll("tbody tr");
-          filas.forEach(function(fila) {
-            const cod = fila.getAttribute("data-distrito");
-            fila.style.display = (valor === "TODOS" || cod === valor) ? "" : "none";
+        if (selector && tabla) {
+          selector.addEventListener("change", function() {
+            const valor = selector.value;
+            const filas = tabla.querySelectorAll("tbody tr");
+            filas.forEach(function(fila) {
+              const cod = fila.getAttribute("data-distrito");
+              fila.style.display = (valor === "TODOS" || cod === valor) ? "" : "none";
+            });
           });
-        });
+        }
+
+        if (notaTelemetria && typeof fetch !== "undefined") {
+          fetch("http://localhost:8000/api/v1/health")
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+              notaTelemetria.textContent =
+                "Servidor IA en línea: " + (d.gpu_name || d.active_engine) +
+                " | Base de Datos: " + d.database_status +
+                " | Almacenamiento: " + d.storage_backend;
+            })
+            .catch(function() {
+              notaTelemetria.textContent =
+                "Modo Rural Resiliente: Operando con instantánea local del Tolima (Backend en espera).";
+            });
+        }
       })();
     </script>
   </section>

@@ -16,9 +16,9 @@ PlagIA es una solución empresarial de agricultura de precisión diseñada para 
 | **Preprocesamiento y Geoespacial** | **OpenCV** (corrección radiométrica `CLAHE`), **Albumentations**, **Rasterio** (ortomosaicos GeoTIFF) y **GeoPandas / Shapely** (Mapas de Calor y capas GeoJSON) |
 | **MLOps y Gobernanza de Datos** | **PySpark / Pandas** (manifiesto multinivel y prevención de *Data Leakage*) + **MLflow Tracking & Model Registry** |
 | **Backend y Procesamiento Asíncrono** | **FastAPI** (asíncrono, JWT, OpenAPI) + **Celery & Redis** (segmentación de ortomosaicos en segundo plano) |
-| **Portal Web SSR (Zonas Rurales)** | **Deno 2.9.5 (TypeScript 6.0.3)** + **Fresh Islands Architecture** (`islands/MapViewer.tsx` con Leaflet y `islands/AnalyticsDashboard.tsx`) |
+| **Portal Web SSR (Zonas Rurales)** | **Deno 2.9.5 (TypeScript 6.0.3)** en `/frontend` + **Fresh Islands Architecture** (`islands/MapViewer.tsx` con Leaflet y `islands/AnalyticsDashboard.tsx`) |
 | **Persistencia Espacial y Objetos** | **PostgreSQL + PostGIS** (geometrías de lotes y focos de plaga, con respaldo SQLite) + **MinIO (S3 compatible)** |
-| **Aplicación Móvil (Campo)** | **Flutter 3.47.9 / Dart 3.13.7** en `/mobile_flutter` preparada para **Android Studio** (Guías visuales de encuadre foliar, Edge-AI ONNX <200 ms, rechazo fuera de dominio `desconocido_no_arroz`, GPS offline y cola SQLite) |
+| **Aplicación Móvil (Campo)** | **Flutter 3.47.9 / Dart 3.13.7** en `/mobile` preparada para **Android Studio** (Guías visuales de encuadre foliar, Edge-AI ONNX <200 ms, rechazo fuera de dominio `desconocido_no_arroz`, GPS offline y cola SQLite) |
 | **Contenerización** | **Docker & Docker Compose** con passthrough de GPU NVIDIA |
 
 ---
@@ -55,16 +55,16 @@ PlagIA/
 │   ├── schemas/                 # Contratos Pydantic de peticiones y respuestas
 │   ├── services/                # Servicio singleton de inferencia (ONNX Runtime / PyTorch / YOLO)
 │   ├── workers/                 # Tareas asíncronas Celery + Redis para ortomosaicos de dron
-│   └── api/v1/                  # Endpoints: auth, farms, inference, drones, maps, sync y geospatial
-├── web_fresh/                   # Portal Web SSR con Arquitectura de Islas (Deno 2.9.5 + TypeScript 6.0.3)
+│   └── api/v1/                  # Endpoints: auth, farms, inference, drones, maps y sync
+├── frontend/                    # Portal Web SSR con Arquitectura de Islas (Deno 2.9.5 + TypeScript 6.0.3)
 │   ├── deno.json                # Tareas Deno (start, dev, check, test)
 │   ├── main.ts                  # Rutas SSR: /dashboard, /lotes, /mapas, /reportes
 │   └── islands/                 # MapViewer.tsx (Leaflet + GeoJSON) y AnalyticsDashboard.tsx (FEDEARROZ/AGROSAVIA)
-├── mobile_flutter/              # Aplicación Móvil Offline-First en Flutter 3.47.9 (Dart 3.13.7) para Android Studio
+├── mobile/                      # Aplicación Móvil Offline-First en Flutter 3.47.9 (Dart 3.13.7) para Android Studio
 │   ├── pubspec.yaml             # Configuración Dart ^3.13.7 y paquetes de campo
 │   ├── android/                 # Proyecto Android preconfigurado (Permisos Cámara, GPS y Tráfico Local)
 │   ├── assets/models/           # Modelo ONNX INT8 embebido + catálogo fitosanitario del Tolima
-│   └── lib/                     # Código Dart: modelos, servicios Edge-AI/GPS/Sync y pantallas con guías de encuadre
+│   └── lib/                     # Código Dart: modelos, servicios Edge-AI/GPS/Sync, tema Material 3 y pantallas
 └── tests/
     └── test_plagia_platform.py  # Suite de pruebas automatizadas E2E (pytest)
 ```
@@ -112,7 +112,7 @@ docker compose up --build -d
    ```powershell
    .\scripts\setup_flutter_android.ps1
    ```
-2. Abre **Android Studio** $\rightarrow$ **Open** $\rightarrow$ selecciona la carpeta `C:\Users\erson\Documents\Programación\ISIDEAD\PlagIA\mobile_app`.
+2. Abre **Android Studio** $\rightarrow$ **Open** $\rightarrow$ selecciona la carpeta `C:\Users\erson\Documents\Programación\ISIDEAD\PlagIA\mobile`.
 3. Inicia un emulador desde el **Device Manager** (la app se conectará automáticamente a `http://10.0.2.2:8000/api/v1` cuando haya red y operará en modo **Edge-AI Offline** cuando no exista conectividad).
 
 ---

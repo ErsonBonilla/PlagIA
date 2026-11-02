@@ -22,7 +22,7 @@ export function renderizarRutaLotes(): string {
               <th>Centroide GPS</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="cuerpo-tabla-lotes">
             <tr>
               <td><strong>LOTE-ESPINAL-01</strong></td>
               <td>FINCA-TOL-01 (Hacienda San Isidro)</td>
@@ -44,6 +44,29 @@ export function renderizarRutaLotes(): string {
           </tbody>
         </table>
       </div>
+      <script>
+        (function sincronizarLotesEnVivo() {
+          const cuerpoTabla = document.getElementById("cuerpo-tabla-lotes");
+          if (!cuerpoTabla || typeof fetch === "undefined") return;
+          fetch("http://localhost:8000/api/v1/farms/lots")
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(lotes) {
+              if (!Array.isArray(lotes) || lotes.length === 0) return;
+              cuerpoTabla.innerHTML = lotes.map(function(l) {
+                return "<tr>" +
+                  "<td><strong>" + l.id + "</strong></td>" +
+                  "<td>" + l.farm_id + " (" + l.name + ")</td>" +
+                  "<td>" + l.municipality + "</td>" +
+                  "<td>" + l.rice_variety + "</td>" +
+                  "<td>" + l.crop_age_days + " días</td>" +
+                  "<td>" + l.area_ha + " ha</td>" +
+                  "<td>" + l.center_lat + ", " + l.center_lon + "</td>" +
+                  "</tr>";
+              }).join("");
+            })
+            .catch(function() {});
+        })();
+      </script>
     </section>
   `;
   return renderizarDocumentoSSR("Gestión de Fincas y Lotes", "/lotes", cuerpo, false);
