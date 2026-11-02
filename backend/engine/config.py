@@ -12,9 +12,10 @@ import os
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Rutas del Monorepo
+# Rutas del Componente Backend y del Monorepo
 # ---------------------------------------------------------------------------
-RAIZ_PROYECTO = Path(__file__).resolve().parents[1]
+RAIZ_PROYECTO = Path(__file__).resolve().parents[1]  # backend/
+RAIZ_MONOREPO = RAIZ_PROYECTO.parent  # PlagIA/
 PROJECT_ROOT = RAIZ_PROYECTO
 
 RAIZ_DATASET = Path(os.environ.get("PLAGIA_DATASET_ROOT", str(RAIZ_PROYECTO / "dataset")))
@@ -48,13 +49,16 @@ CURATION_REPORT_PATH = RUTA_REPORTE_CURADURIA
 
 DIR_MODELOS = Path(os.environ.get("PLAGIA_MODELS_DIR", str(RAIZ_PROYECTO / "models")))
 MODELS_DIR = DIR_MODELOS
-DIR_ARTEFACTOS = Path(os.environ.get("PLAGIA_ARTIFACTS_DIR", str(RAIZ_PROYECTO / "artifacts")))
+DIR_EJECUCION = RAIZ_PROYECTO / "runtime"
+DIR_ARTEFACTOS = Path(
+    os.environ.get("PLAGIA_ARTIFACTS_DIR", str(DIR_EJECUCION / "artifacts"))
+)
 ARTIFACTS_DIR = DIR_ARTEFACTOS
 DIR_ALMACENAMIENTO_LOCAL = Path(
-    os.environ.get("PLAGIA_STORAGE_LOCAL_DIR", str(RAIZ_PROYECTO / "storage_local"))
+    os.environ.get("PLAGIA_STORAGE_LOCAL_DIR", str(DIR_EJECUCION / "storage_local"))
 )
 STORAGE_LOCAL_DIR = DIR_ALMACENAMIENTO_LOCAL
-DIR_ASSETS_MOVIL = RAIZ_PROYECTO / "mobile" / "assets" / "models"
+DIR_ASSETS_MOVIL = RAIZ_MONOREPO / "mobile" / "assets" / "models"
 MOBILE_ASSETS_DIR = DIR_ASSETS_MOVIL
 
 DIR_MANIFIESTOS = RAIZ_PROYECTO / "engine" / "data"
@@ -83,7 +87,7 @@ RUTA_METADATOS_CAMPO_MODELO = DIR_MODELOS / "model_field_leaf_metadata.json"
 # Configuración de MLflow Tracking & Model Registry
 # ---------------------------------------------------------------------------
 MLFLOW_TRACKING_URI = os.environ.get(
-    "PLAGIA_MLFLOW_URI", f"sqlite:///{(RAIZ_PROYECTO / 'mlflow.db').as_posix()}"
+    "PLAGIA_MLFLOW_URI", f"sqlite:///{(DIR_EJECUCION / 'mlflow.db').as_posix()}"
 )
 MLFLOW_EXPERIMENT_NAME = os.environ.get("PLAGIA_MLFLOW_EXPERIMENT", "PlagIA_Tolima_Fitosanitario")
 MLFLOW_MODEL_NAME = os.environ.get("PLAGIA_MLFLOW_MODEL_NAME", "plagia_rice_classifier")

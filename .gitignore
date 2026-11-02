@@ -1,23 +1,25 @@
 # Entornos virtuales y paquetes
 .venv/
 venv/
+backend/.venv/
 __pycache__/
 *.py[cod]
 *$py.class
 *.egg-info/
 .pytest_cache/
+backend/.pytest_cache/
 .ruff_cache/
 
 # Variables de entorno privadas
 .env
+backend/.env
 
 # Datasets de imagenes y manifiestos pesados (se conserva reporte de curaduria)
-dataset/*
-!dataset/reporte_curaduria.json
-engine/data/manifest*.csv
-engine/data/manifiesto*.csv
-artifacts/
-storage_local/
+backend/dataset/*
+!backend/dataset/reporte_curaduria.json
+backend/engine/data/manifest*.csv
+backend/engine/data/manifiesto*.csv
+backend/runtime/
 
 # MLflow y Bases de Datos Locales
 mlruns/
@@ -27,14 +29,14 @@ mlartifacts/
 *.sqlite3
 
 # Modelos entrenados pesados (se conservan modelos INT8 ligeros de 4.5 MB y metadatos JSON)
-models/*.pth
-models/*.pt
-models/*.keras
-models/*.h5
-models/*_fp32.onnx
-!models/plagia_mobile_int8.onnx
-!models/plagia_campo_hoja_int8.onnx
-!models/*.json
+backend/models/*.pth
+backend/models/*.pt
+backend/models/*.keras
+backend/models/*.h5
+backend/models/*_fp32.onnx
+!backend/models/plagia_mobile_int8.onnx
+!backend/models/plagia_campo_hoja_int8.onnx
+!backend/models/*.json
 
 # Flutter / Android Studio build artifacts
 mobile/.dart_tool/

@@ -1,5 +1,5 @@
 # ============================================================================
-# PLAGIA ENTERPRISE - DOCKERFILE MULTI-ETAPA (UV + PYTHON 3.12 + CUDA)
+# PLAGIA ENTERPRISE - DOCKERFILE DEL COMPONENTE BACKEND (UV + PYTHON 3.12 + CUDA)
 # Optimizado para ejecucion sobre WSL 2 con NVIDIA Container Toolkit
 # ============================================================================
 FROM nvidia/cuda:12.6.2-cudnn-runtime-ubuntu24.04
@@ -9,9 +9,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    PATH="/app/.venv/bin:$PATH"
+    PYTHONPATH="/app:/" \
+    PATH="/app/backend/.venv/bin:$PATH"
 
-# Dependencias del sistema para OpenCV, Rasterio (GDAL) y PostGIS
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -23,21 +23,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar binario oficial de uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-WORKDIR /app
+WORKDIR /app/backend
 
-# Instalar Python 3.12 y dependencias cacheadas con uv
 COPY .python-version pyproject.toml ./
 RUN uv python install 3.12 && \
     uv sync --python 3.12 --no-install-project
 
-# Copiar el codigo fuente empresarial
-COPY engine ./engine
-COPY backend ./backend
-COPY scripts ./scripts
-COPY README.md ./
+COPY . .
 
 RUN uv sync --python 3.12
 

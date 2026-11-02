@@ -36,7 +36,7 @@ class ConfiguracionEmpresarial(BaseSettings):
     # Base de datos conveniente de respaldo local: SQLite
     sqlite_fallback_url: str = os.environ.get(
         "PLAGIA_SQLITE_FALLBACK_URL",
-        f"sqlite:///{(RAIZ_PROYECTO / 'plagia_enterprise.db').as_posix()}",
+        f"sqlite:///{(RAIZ_PROYECTO / 'runtime' / 'plagia_enterprise.db').as_posix()}",
     )
 
     redis_url: str = os.environ.get("PLAGIA_REDIS_URL", "redis://localhost:6379/0")
@@ -50,7 +50,7 @@ class ConfiguracionEmpresarial(BaseSettings):
     minio_bucket: str = os.environ.get("PLAGIA_MINIO_BUCKET", "plagia-tolima-orthomosaics")
     minio_secure: bool = False
 
-    storage_local_dir: Path = RAIZ_PROYECTO / "storage_local"
+    storage_local_dir: Path = RAIZ_PROYECTO / "runtime" / "storage_local"
 
 
 configuracion = ConfiguracionEmpresarial()
