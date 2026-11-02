@@ -15,6 +15,13 @@ Deno.test("Portal Web PlagIA SSR responde en /dashboard, /lotes, /mapas, /report
     }
   }
 
+  const reqCss = new Request("http://localhost:3000/static/styles.css");
+  const respCss = manejarSolicitudPortal(reqCss);
+  const cssText = await respCss.text();
+  if (!cssText.includes("--color-verde-arrozal: #1B5E20") || !cssText.includes("--gradcam-high")) {
+    throw new Error("El archivo /static/styles.css no contiene los tokens del sistema de diseño.");
+  }
+
   const reqHealth = new Request("http://localhost:3000/health");
   const respHealth = manejarSolicitudPortal(reqHealth);
   const datos = await respHealth.json();

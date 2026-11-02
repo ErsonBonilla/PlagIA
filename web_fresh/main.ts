@@ -22,6 +22,13 @@ export function manejarSolicitudPortal(req: Request): Response {
     "cache-control": "no-store",
   };
 
+  if (ruta === "/static/styles.css") {
+    const css = Deno.readTextFileSync(new URL("./static/styles.css", import.meta.url));
+    return new Response(css, {
+      status: 200,
+      headers: { "content-type": "text/css; charset=utf-8" },
+    });
+  }
   if (ruta === "/" || ruta === "/dashboard") {
     return new Response(renderizarRutaDashboard(), { status: 200, headers: cabecerasHtml });
   }

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/inspection_record.dart';
+import '../theme/app_theme.dart';
 
 /// Visor Interactivo de Mapa de Calor Fitosanitario del Lote Arrocero.
+///
+/// Utiliza el espectro Grad-CAM (Cian #00B4D8 -> Amarillo Sol #FFD166 -> Rojo Carmesí #EF476F)
+/// para evitar superposición de verde sobre el follaje del cultivo.
 class PantallaMapaCalorFinca extends StatelessWidget {
   final List<RegistroInspeccion> registros;
 
@@ -23,12 +27,6 @@ class PantallaMapaCalorFinca extends StatelessWidget {
     },
   ];
 
-  Color _colorPorSeveridad(double sev) {
-    if (sev >= 0.65) return const Color(0xFFD32F2F);
-    if (sev >= 0.30) return const Color(0xFFF57C00);
-    return const Color(0xFF388E3C);
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -48,7 +46,7 @@ class PantallaMapaCalorFinca extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Fusión geoespacial de ortomosaico VANT + inspecciones móviles georreferenciadas (EPSG:4326).',
+                  'Espectro Grad-CAM de alto contraste (Cian / Amarillo Sol / Rojo Carmesí) que no se confunde con el follaje verde del arroz.',
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -56,16 +54,16 @@ class PantallaMapaCalorFinca extends StatelessWidget {
                   runSpacing: 6,
                   children: [
                     _puntoLeyenda(
-                      const Color(0xFF388E3C),
-                      'Saludable (<0.30)',
+                      AppTheme.gradcamBajo,
+                      'Cultivo Sano / Baja Activación (<0.30)',
                     ),
                     _puntoLeyenda(
-                      const Color(0xFFF57C00),
-                      'Moderado (0.30-0.64)',
+                      AppTheme.gradcamMedio,
+                      'Alerta Temprana (0.30-0.64)',
                     ),
                     _puntoLeyenda(
-                      const Color(0xFFD32F2F),
-                      'Crítico (>=0.65)',
+                      AppTheme.gradcamAlto,
+                      'Plaga Detectada (>=0.65)',
                     ),
                   ],
                 ),
@@ -87,13 +85,13 @@ class PantallaMapaCalorFinca extends StatelessWidget {
           itemBuilder: (context, index) {
             final celda = _celdasCuadriculaBase[index];
             final double sev = (celda['severidad'] as num).toDouble();
-            final Color colorFondo = _colorPorSeveridad(sev);
+            final Color colorFondo = AppTheme.colorGradCamPorSeveridad(sev);
             return Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: colorFondo.withValues(alpha: 0.88),
+                color: colorFondo,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.black26),
+                border: Border.all(color: AppTheme.grisCarbon.withValues(alpha: 0.35)),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -102,7 +100,7 @@ class PantallaMapaCalorFinca extends StatelessWidget {
                     celda['sector'] as String,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.grisCarbon,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -111,14 +109,18 @@ class PantallaMapaCalorFinca extends StatelessWidget {
                   Text(
                     celda['etiqueta'] as String,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                    style: const TextStyle(
+                      color: AppTheme.grisCarbon,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Sev: ${sev.toStringAsFixed(2)}',
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                      color: AppTheme.grisCarbon,
+                      fontWeight: FontWeight.w700,
                       fontSize: 12,
                     ),
                   ),
@@ -149,18 +151,23 @@ class PantallaMapaCalorFinca extends StatelessWidget {
             (r) => Card(
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: _colorPorSeveridad(r.indiceSeveridad),
+                  backgroundColor: AppTheme.colorEstadoFitosanitario(
+                    r.etiquetaEnfermedad,
+                    r.nivelRiesgo,
+                  ),
                   child: const Icon(Icons.location_on, color: Colors.white),
                 ),
                 title: Text(
-                  '${r.nombreComun} (${r.etiquetaEnfermedad} - ${r.idLote})',
+                  '${r.nombreComun} (${AppTheme.textoInsigniaEstado(r.etiquetaEnfermedad, r.nivelRiesgo)})',
                 ),
                 subtitle: Text(
                   'GPS: ${r.latitud}, ${r.longitud} | Severidad: ${r.indiceSeveridad}',
                 ),
                 trailing: Icon(
                   r.sincronizado ? Icons.cloud_done : Icons.cloud_upload_outlined,
-                  color: r.sincronizado ? Colors.green : Colors.orange,
+                  color: r.sincronizado
+                      ? AppTheme.estadoSano
+                      : AppTheme.estadoAlerta,
                 ),
               ),
             ),

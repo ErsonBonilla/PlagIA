@@ -4,6 +4,7 @@ import '../models/inspection_record.dart';
 import '../services/edge_inference_service.dart';
 import '../services/gps_service.dart';
 import '../services/offline_sync_service.dart';
+import '../theme/app_theme.dart';
 
 class PantallaEscanerCampo extends StatefulWidget {
   final ServicioInferenciaBorde servicioBorde;
@@ -239,15 +240,15 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
   }
 
   Widget _construirTarjetaDiagnostico(RegistroInspeccion registro) {
-    final bool esSano = registro.etiquetaEnfermedad == 'sano';
     final bool fueraDominio = registro.esFueraDeDominio;
-    final Color colorInsignia = fueraDominio
-        ? const Color(0xFF475569)
-        : (esSano
-              ? const Color(0xFF2E7D32)
-              : (registro.nivelRiesgo == 'CRITICO'
-                    ? const Color(0xFFC62828)
-                    : const Color(0xFFEF6C00)));
+    final Color colorInsignia = AppTheme.colorEstadoFitosanitario(
+      registro.etiquetaEnfermedad,
+      registro.nivelRiesgo,
+    );
+    final String textoInsignia = AppTheme.textoInsigniaEstado(
+      registro.etiquetaEnfermedad,
+      registro.nivelRiesgo,
+    );
 
     return Card(
       elevation: 2,
@@ -271,9 +272,7 @@ class _EstadoPantallaEscanerCampo extends State<PantallaEscanerCampo> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    fueraDominio
-                        ? 'RECHAZO FUERA DE DOMINIO'
-                        : 'RIESGO ${registro.nivelRiesgo}',
+                    textoInsignia,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

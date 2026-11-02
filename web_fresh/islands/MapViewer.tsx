@@ -1,9 +1,11 @@
 /**
  * Isla Interactiva: Visor Geoespacial de Ortomosaicos y Mapas de Calor (Leaflet + GeoJSON).
  *
- * Aplica la Regla de Oro:
- * - Interfaz de usuario, leyendas, popups agronómicos y variables de dominio en español.
- * - Contratos GeoJSON (`FeatureCollection`, `features`, `geometry`, `properties`) y API Leaflet en inglés.
+ * Aplica la Regla de Visibilidad Grad-CAM:
+ * - Nunca utiliza verde sobre follaje para baja activación.
+ * - Nivel 0 (Baja/Sin Activación): Cian Translúcido (#00B4D8, opacity: 0.3)
+ * - Nivel 1 (Activación Media)   : Amarillo Sol (#FFD166, opacity: 0.7)
+ * - Nivel 2 (Foco de Infección)  : Rojo Carmesí (#EF476F, opacity: 0.9)
  */
 
 export interface CeldaCalorFitosanitaria {
@@ -11,8 +13,8 @@ export interface CeldaCalorFitosanitaria {
   sector: string;
   etiquetaEnfermedad: string;
   nombreComun: string;
+  estadoBadge: "Cultivo Sano" | "Alerta Temprana" | "Plaga Detectada" | "Objeto No Identificado";
   indiceSeveridad: number;
-  nivelRiesgo: "BAJO" | "MEDIO" | "ALTO" | "CRITICO";
   latitud: number;
   longitud: number;
   recomendacionMip: string;
@@ -24,8 +26,8 @@ export const CELDAS_CALOR_TOLIMA: CeldaCalorFitosanitaria[] = [
     sector: "Sector Norte - Canal Usocoello",
     etiquetaEnfermedad: "sano",
     nombreComun: "Cultivo Saludable",
+    estadoBadge: "Cultivo Sano",
     indiceSeveridad: 0.06,
-    nivelRiesgo: "BAJO",
     latitud: 4.1512,
     longitud: -74.8865,
     recomendacionMip: "Mantener lámina de agua estable y monitoreo preventivo.",
@@ -35,8 +37,8 @@ export const CELDAS_CALOR_TOLIMA: CeldaCalorFitosanitaria[] = [
     sector: "Sector Central - Lote Las Acacias",
     etiquetaEnfermedad: "piricularia",
     nombreComun: "Piricularia / Añublo del Arroz",
+    estadoBadge: "Plaga Detectada",
     indiceSeveridad: 0.89,
-    nivelRiesgo: "CRITICO",
     latitud: 4.1486,
     longitud: -74.8830,
     recomendacionMip:
@@ -47,8 +49,8 @@ export const CELDAS_CALOR_TOLIMA: CeldaCalorFitosanitaria[] = [
     sector: "Sector Oriental - El Espinal",
     etiquetaEnfermedad: "roya_parda",
     nombreComun: "Roya Parda Foliar",
+    estadoBadge: "Plaga Detectada",
     indiceSeveridad: 0.74,
-    nivelRiesgo: "ALTO",
     latitud: 4.1460,
     longitud: -74.8795,
     recomendacionMip:
@@ -59,8 +61,8 @@ export const CELDAS_CALOR_TOLIMA: CeldaCalorFitosanitaria[] = [
     sector: "Sector Sur - Saldaña",
     etiquetaEnfermedad: "barrenador_tallo",
     nombreComun: "Barrenador del Tallo (Diatraea / Rupela)",
-    indiceSeveridad: 0.58,
-    nivelRiesgo: "ALTO",
+    estadoBadge: "Alerta Temprana",
+    indiceSeveridad: 0.48,
     latitud: 3.9317,
     longitud: -75.0153,
     recomendacionMip:
@@ -75,8 +77,8 @@ export function renderizarIslaMapaViewer(urlApiBase = "http://localhost:8000/api
   <section class="tarjeta-isla" id="isla-visor-mapa">
     <div class="encabezado-isla">
       <div>
-        <h2>Visor Geoespacial de Ortomosaicos y Mapa de Calor (PostGIS / GeoJSON)</h2>
-        <p class="subtitulo">Integración interactiva Leaflet para los distritos de riego del Tolima (EPSG:4326)</p>
+        <h2>Visor Geoespacial de Ortomosaicos y Capas Grad-CAM (PostGIS / GeoJSON)</h2>
+        <p class="subtitulo">Espectro de alto contraste (Cian / Amarillo Sol / Rojo Carmesí) sin superposición verde sobre follaje</p>
       </div>
       <div class="controles-isla">
         <select id="selector-finca-mapa" aria-label="Seleccionar Finca o Lote">
@@ -90,14 +92,14 @@ export function renderizarIslaMapaViewer(urlApiBase = "http://localhost:8000/api
     </div>
 
     <div class="leyenda-calor">
-      <span class="insignia-leyenda verde">Saludable (&lt; 0.30)</span>
-      <span class="insignia-leyenda amarillo">Moderado (0.30 - 0.64)</span>
-      <span class="insignia-leyenda rojo">Crítico (&ge; 0.65 - Acción Inmediata)</span>
+      <span class="insignia-gradcam nivel-0">Nivel 0 · Cultivo Sano (#00B4D8, opacidad 0.3)</span>
+      <span class="insignia-gradcam nivel-1">Nivel 1 · Alerta Temprana (#FFD166, opacidad 0.7)</span>
+      <span class="insignia-gradcam nivel-2">Nivel 2 · Plaga Detectada (#EF476F, opacidad 0.9)</span>
     </div>
 
     <div id="contenedor-leaflet-tolima" style="height: 430px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1;"></div>
     <p id="estado-conexion-mapa" class="nota-pie">
-      Estado de capa espacial: Mostrando malla georreferenciada del Tolima. Conectado a <code>${urlApiBase}/maps/heatmap/{farm_id}</code>.
+      Estado de capa espacial: Mostrando espectro Grad-CAM del Tolima. Conectado a <code>${urlApiBase}/maps/heatmap/{farm_id}</code>.
     </p>
 
     <script>
@@ -105,10 +107,14 @@ export function renderizarIslaMapaViewer(urlApiBase = "http://localhost:8000/api
         const celdasBase = ${datosInicialesJson};
         const urlApi = "${urlApiBase}";
 
-        function colorPorSeveridad(sev) {
-          if (sev >= 0.65) return "#dc2626";
-          if (sev >= 0.30) return "#f59e0b";
-          return "#16a34a";
+        function estiloGradCamPorSeveridad(sev) {
+          if (sev >= 0.65) {
+            return { color: "#EF476F", fillColor: "#EF476F", fillOpacity: 0.9, badge: "Plaga Detectada" };
+          }
+          if (sev >= 0.30) {
+            return { color: "#FFD166", fillColor: "#FFD166", fillOpacity: 0.7, badge: "Alerta Temprana" };
+          }
+          return { color: "#00B4D8", fillColor: "#00B4D8", fillOpacity: 0.3, badge: "Cultivo Sano" };
         }
 
         function montarMapa() {
@@ -116,7 +122,7 @@ export function renderizarIslaMapaViewer(urlApiBase = "http://localhost:8000/api
           const mapa = L.map("contenedor-leaflet-tolima").setView([4.1486, -74.8830], 14);
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             maxZoom: 19,
-            attribution: "&copy; OpenStreetMap | PlagIA Tolima Geoespacial"
+            attribution: "&copy; OpenStreetMap | PlagIA Tolima Grad-CAM"
           }).addTo(mapa);
 
           const capaGrupo = L.layerGroup().addTo(mapa);
@@ -124,18 +130,19 @@ export function renderizarIslaMapaViewer(urlApiBase = "http://localhost:8000/api
           function dibujarCeldasLocales(lista) {
             capaGrupo.clearLayers();
             lista.forEach(function(c) {
-              const color = colorPorSeveridad(c.indiceSeveridad);
+              const est = estiloGradCamPorSeveridad(c.indiceSeveridad);
               const circulo = L.circle([c.latitud, c.longitud], {
-                color: color,
-                fillColor: color,
-                fillOpacity: 0.55,
+                color: est.color,
+                fillColor: est.fillColor,
+                fillOpacity: est.fillOpacity,
+                weight: 2,
                 radius: 180
               }).addTo(capaGrupo);
 
               circulo.bindPopup(
-                "<strong>" + c.nombreComun + " (" + c.etiquetaEnfermedad + ")</strong><br/>" +
+                "<strong>" + c.estadoBadge + " · " + c.nombreComun + "</strong><br/>" +
                 "Sector: " + c.sector + "<br/>" +
-                "Índice de Severidad: <b>" + c.indiceSeveridad.toFixed(2) + "</b> (" + c.nivelRiesgo + ")<br/>" +
+                "Índice de Severidad: <b>" + c.indiceSeveridad.toFixed(2) + "</b><br/>" +
                 "<em>MIP: " + c.recomendacionMip + "</em>"
               );
             });
@@ -159,14 +166,20 @@ export function renderizarIslaMapaViewer(urlApiBase = "http://localhost:8000/api
                 const capaGeo = L.geoJSON(data.geojson, {
                   style: function(feature) {
                     const sev = (feature.properties && feature.properties.severity_index) || 0.1;
-                    const col = colorPorSeveridad(sev);
-                    return { color: col, fillColor: col, weight: 2, fillOpacity: 0.55 };
+                    const est = estiloGradCamPorSeveridad(sev);
+                    return {
+                      color: est.color,
+                      fillColor: est.fillColor,
+                      weight: 2,
+                      fillOpacity: est.fillOpacity
+                    };
                   },
                   onEachFeature: function(feature, layer) {
                     const p = feature.properties || {};
+                    const est = estiloGradCamPorSeveridad(p.severity_index || 0.1);
                     layer.bindPopup(
-                      "<strong>" + (p.nombre_comun || p.disease_label) + "</strong><br/>" +
-                      "Severidad: " + p.severity_index + " | Riesgo: " + p.nivel_riesgo + "<br/>" +
+                      "<strong>" + est.badge + " · " + (p.nombre_comun || p.disease_label) + "</strong><br/>" +
+                      "Severidad: " + p.severity_index + "<br/>" +
                       "<em>" + (p.recomendacion_mip || "") + "</em>"
                     );
                   }
@@ -174,7 +187,7 @@ export function renderizarIslaMapaViewer(urlApiBase = "http://localhost:8000/api
                 if (capaGeo.getBounds().isValid()) {
                   mapa.fitBounds(capaGeo.getBounds());
                 }
-                estado.textContent = "Capa GeoJSON sincronizada (" + data.total_cells + " celdas, infestación: " + (data.infection_rate * 100).toFixed(1) + "%).";
+                estado.textContent = "Capa GeoJSON Grad-CAM sincronizada (" + data.total_cells + " celdas, infestación: " + (data.infection_rate * 100).toFixed(1) + "%).";
               } catch (err) {
                 dibujarCeldasLocales(celdasBase);
                 estado.textContent = "Modo Rural Resiliente: Mostrando caché geoespacial local (" + err.message + ").";

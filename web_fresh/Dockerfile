@@ -6,6 +6,7 @@ FROM denoland/deno:latest
 WORKDIR /app
 
 COPY deno.json ./
+COPY static ./static
 COPY islands ./islands
 COPY routes ./routes
 COPY tests ./tests

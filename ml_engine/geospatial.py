@@ -158,12 +158,26 @@ def construir_geodataframe_mapa_calor(
             sev_base * confianza if enfermedad != "sano" else 0.05 * (1.0 - confianza), 4
         )
 
-        if indice_severidad >= 0.65:
-            zona_calor = "CRITICA_ROJA"
+        if enfermedad == "desconocido_no_arroz":
+            zona_calor = "FUERA_DOMINIO_GRIS"
+            color_gradcam = "#6C757D"
+            opacidad_gradcam = 0.4
+            estado_badge = "Objeto No Identificado"
+        elif indice_severidad >= 0.65:
+            zona_calor = "NIVEL_2_FOCO_INFECCION"
+            color_gradcam = "#EF476F"
+            opacidad_gradcam = 0.9
+            estado_badge = "Plaga Detectada"
         elif indice_severidad >= 0.30:
-            zona_calor = "MODERADA_AMARILLA"
+            zona_calor = "NIVEL_1_ACTIVACION_MEDIA"
+            color_gradcam = "#FFD166"
+            opacidad_gradcam = 0.7
+            estado_badge = "Alerta Temprana"
         else:
-            zona_calor = "SALUDABLE_VERDE"
+            zona_calor = "NIVEL_0_BAJA_ACTIVACION"
+            color_gradcam = "#00B4D8"
+            opacidad_gradcam = 0.3
+            estado_badge = "Cultivo Sano"
 
         if "bbox_gps" in item and item["bbox_gps"]:
             min_lon, min_lat, max_lon, max_lat = item["bbox_gps"]
@@ -183,9 +197,12 @@ def construir_geodataframe_mapa_calor(
                 "patch_id": item.get("patch_id", f"celda_{len(registros):03d}"),
                 "disease_label": enfermedad,
                 "nombre_comun": info_kb["nombre_comun"],
+                "estado_badge": estado_badge,
                 "confidence": round(confianza, 4),
                 "severity_index": indice_severidad,
                 "heat_zone": zona_calor,
+                "gradcam_color": color_gradcam,
+                "gradcam_opacity": opacidad_gradcam,
                 "nivel_riesgo": info_kb["nivel_riesgo"],
                 "latitude": c_lat,
                 "longitude": c_lon,
@@ -201,7 +218,7 @@ def exportar_artefactos_mapa_calor(
     lot_id: str = "LOTE-ESPINAL-01",
     out_dir: Path = DIR_ARTEFACTOS / "mapas_calor",
 ) -> dict:
-    """Exporta el Mapa de Calor Fitosanitario como capa GeoJSON estándar y visualización PNG."""
+    """Exporta el Mapa de Calor Fitosanitario como capa GeoJSON estándar y visualización PNG (espectro Magma/Grad-CAM)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     ruta_geojson = out_dir / f"mapa_calor_{lot_id}.geojson"
     ruta_png = out_dir / f"mapa_calor_{lot_id}.png"
@@ -213,13 +230,13 @@ def exportar_artefactos_mapa_calor(
     gdf.plot(
         column="severity_index",
         ax=ax,
-        cmap="RdYlGn_r",
+        cmap="magma_r",
         vmin=0.0,
         vmax=1.0,
-        edgecolor="#222222",
+        edgecolor="#1C1B1F",
         linewidth=0.8,
         legend=True,
-        legend_kwds={"label": "Índice de Severidad Fitosanitaria (0 = Sano, 1 = Crítico)"},
+        legend_kwds={"label": "Espectro de Severidad Grad-CAM / Magma (0 = Baja, 1 = Crítica)"},
     )
 
     for _, fila in gdf.iterrows():

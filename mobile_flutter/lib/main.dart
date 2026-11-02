@@ -5,6 +5,7 @@ import 'screens/field_scanner_screen.dart';
 import 'services/edge_inference_service.dart';
 import 'services/gps_service.dart';
 import 'services/offline_sync_service.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,13 +20,7 @@ class AplicacionEmpresarialPlagIA extends StatelessWidget {
     return MaterialApp(
       title: ConfiguracionApp.tituloApp,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1B5E20),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       home: const ContenedorInicioPlagIA(),
     );
   }

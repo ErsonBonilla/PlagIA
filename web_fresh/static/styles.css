@@ -1,0 +1,281 @@
+/* ============================================================================
+ * SISTEMA DE DISEÑO CROMÁTICO Y ACCESIBILIDAD VISUAL - PLAGIA (WCAG AA > 4.5:1)
+ * ============================================================================ */
+
+:root {
+  /* Marca y Neutros */
+  --color-verde-arrozal: #1B5E20;
+  --color-verde-hoja: #2E7D32;
+  --color-blanco-campo: #F8F9FA;
+  --color-blanco-puro: #FFFFFF;
+  --color-gris-carbon: #1C1B1F;
+  --color-rojo-tolima: #D32F2F;
+
+  /* Semántica de Plagas */
+  --color-fitosanitario-sano: #4CAF50;
+  --color-fitosanitario-alerta: #FFB300;
+  --color-fitosanitario-critico: #D32F2F;
+  --color-fitosanitario-desconocido: #6C757D;
+
+  /* Capas de IA Grad-CAM (Evita superposición verde sobre verde del follaje) */
+  --gradcam-low: rgba(0, 180, 216, 0.3);
+  --gradcam-medium: rgba(255, 209, 102, 0.7);
+  --gradcam-high: rgba(239, 71, 111, 0.9);
+  --borde-suave: #E2E8F0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-blanco-campo);
+  color: var(--color-gris-carbon);
+  line-height: 1.5;
+}
+
+.barra-superior {
+  background-color: var(--color-verde-arrozal);
+  color: var(--color-blanco-puro);
+  padding: 0.9rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.marca-titulo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.marca-subtitulo {
+  font-size: 0.8rem;
+  opacity: 0.92;
+  display: block;
+}
+
+.navegacion-principal {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.enlace-nav {
+  color: var(--color-blanco-puro);
+  text-decoration: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background-color 0.15s ease;
+}
+
+.enlace-nav:hover {
+  background-color: var(--color-verde-hoja);
+}
+
+.enlace-nav.activo {
+  background: var(--color-blanco-puro);
+  color: var(--color-verde-arrozal);
+  font-weight: 700;
+}
+
+.contenedor-principal {
+  max-width: 1240px;
+  margin: 1.5rem auto;
+  padding: 0 1.25rem;
+}
+
+.tarjeta-isla {
+  background: var(--color-blanco-puro);
+  border: 1px solid var(--borde-suave);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.encabezado-isla {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.encabezado-isla h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  color: var(--color-gris-carbon);
+}
+
+.subtitulo {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.controles-isla {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+select, .boton-primario {
+  padding: 0.5rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #CBD5E1;
+  font-size: 0.9rem;
+  color: var(--color-gris-carbon);
+}
+
+.boton-primario {
+  background-color: var(--color-verde-arrozal);
+  color: var(--color-blanco-puro);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.boton-primario:hover {
+  background-color: var(--color-verde-hoja);
+}
+
+.rejilla-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.tarjeta-kpi {
+  background: var(--color-blanco-campo);
+  border: 1px solid var(--borde-suave);
+  border-left: 4px solid var(--color-verde-arrozal);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.etiqueta-kpi {
+  font-size: 0.82rem;
+  color: var(--color-gris-carbon);
+  font-weight: 600;
+}
+
+.valor-kpi {
+  font-size: 1.65rem;
+  color: var(--color-verde-arrozal);
+  margin: 0.2rem 0;
+}
+
+.detalle-kpi {
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+.contenedor-tabla {
+  overflow-x: auto;
+}
+
+.tabla-empresarial {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tabla-empresarial th, .tabla-empresarial td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--borde-suave);
+  color: var(--color-gris-carbon);
+}
+
+.tabla-empresarial th {
+  background-color: var(--color-blanco-campo);
+  font-weight: 700;
+}
+
+.leyenda-calor {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Badges de Estado Fitosanitario */
+.insignia-estado {
+  display: inline-block;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-blanco-puro);
+}
+
+.insignia-estado.sano {
+  background-color: var(--color-fitosanitario-sano);
+}
+
+.insignia-estado.alerta {
+  background-color: var(--color-fitosanitario-alerta);
+  color: var(--color-gris-carbon);
+}
+
+.insignia-estado.critico {
+  background-color: var(--color-fitosanitario-critico);
+}
+
+.insignia-estado.desconocido {
+  background-color: var(--color-fitosanitario-desconocido);
+}
+
+/* Leyendas de Espectro Grad-CAM (No-Verde sobre follaje) */
+.insignia-gradcam {
+  display: inline-block;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-gris-carbon);
+  border: 1px solid rgba(28, 27, 31, 0.2);
+}
+
+.insignia-gradcam.nivel-0 {
+  background-color: var(--gradcam-low);
+}
+
+.insignia-gradcam.nivel-1 {
+  background-color: var(--gradcam-medium);
+}
+
+.insignia-gradcam.nivel-2 {
+  background-color: var(--gradcam-high);
+  color: var(--color-blanco-puro);
+}
+
+.nota-pie {
+  font-size: 0.82rem;
+  color: #475569;
+  margin-top: 0.75rem;
+}
+
+.aviso-ica {
+  background: var(--color-blanco-puro);
+  border: 1px solid var(--borde-suave);
+  border-left: 4px solid var(--color-rojo-tolima);
+  padding: 0.9rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-top: 1.5rem;
+  color: var(--color-gris-carbon);
+}

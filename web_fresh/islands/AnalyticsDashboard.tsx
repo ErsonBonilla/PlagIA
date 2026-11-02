@@ -1,8 +1,11 @@
 /**
  * Isla Interactiva: Tablero de Control Fitosanitario Institucional (FEDEARROZ / AGROSAVIA).
  *
- * Aplica la Regla de Oro:
- * - Indicadores, filtros por distrito de riego, tablas y alertas en español.
+ * Utiliza los textos oficiales de estado en español:
+ * - "Cultivo Sano" (#4CAF50)
+ * - "Alerta Temprana" (#FFB300)
+ * - "Plaga Detectada" (#D32F2F)
+ * - "Objeto No Identificado" (#6C757D)
  */
 
 export interface IndicadorDistritoTolima {
@@ -12,7 +15,8 @@ export interface IndicadorDistritoTolima {
   hectareasMonitoreadas: number;
   tasaInfestacionPct: number;
   patogenoPredominante: string;
-  nivelAlerta: "VERDE" | "AMARILLA" | "ROJA";
+  estadoDiagnostico: "Cultivo Sano" | "Alerta Temprana" | "Plaga Detectada" | "Objeto No Identificado";
+  claseSemantica: "sano" | "alerta" | "critico" | "desconocido";
   variedadPrincipal: string;
 }
 
@@ -24,7 +28,8 @@ export const INDICADORES_DISTRITOS_TOLIMA: IndicadorDistritoTolima[] = [
     hectareasMonitoreadas: 1420,
     tasaInfestacionPct: 18.4,
     patogenoPredominante: "Piricularia (piricularia) / Roya Parda",
-    nivelAlerta: "ROJA",
+    estadoDiagnostico: "Plaga Detectada",
+    claseSemantica: "critico",
     variedadPrincipal: "Fedearroz 67",
   },
   {
@@ -34,7 +39,8 @@ export const INDICADORES_DISTRITOS_TOLIMA: IndicadorDistritoTolima[] = [
     hectareasMonitoreadas: 1180,
     tasaInfestacionPct: 11.2,
     patogenoPredominante: "Roya Amarilla (roya_amarilla)",
-    nivelAlerta: "AMARILLA",
+    estadoDiagnostico: "Alerta Temprana",
+    claseSemantica: "alerta",
     variedadPrincipal: "Fedearroz 2000",
   },
   {
@@ -42,9 +48,10 @@ export const INDICADORES_DISTRITOS_TOLIMA: IndicadorDistritoTolima[] = [
     distrito: "Meseta de Ibagué",
     municipio: "Ibagué",
     hectareasMonitoreadas: 890,
-    tasaInfestacionPct: 5.6,
-    patogenoPredominante: "Cultivo Saludable (sano)",
-    nivelAlerta: "VERDE",
+    tasaInfestacionPct: 2.1,
+    patogenoPredominante: "Ausencia de síntomas foliares (sano)",
+    estadoDiagnostico: "Cultivo Sano",
+    claseSemantica: "sano",
     variedadPrincipal: "Fedearroz 67",
   },
   {
@@ -54,16 +61,14 @@ export const INDICADORES_DISTRITOS_TOLIMA: IndicadorDistritoTolima[] = [
     hectareasMonitoreadas: 760,
     tasaInfestacionPct: 14.8,
     patogenoPredominante: "Barrenador del Tallo (barrenador_tallo)",
-    nivelAlerta: "AMARILLA",
+    estadoDiagnostico: "Alerta Temprana",
+    claseSemantica: "alerta",
     variedadPrincipal: "Fedearroz 2000",
   },
 ];
 
 export function renderizarIslaAnalyticsDashboard(): string {
   const filasHtml = INDICADORES_DISTRITOS_TOLIMA.map((item) => {
-    const claseInsignia = item.nivelAlerta === "ROJA"
-      ? "rojo"
-      : (item.nivelAlerta === "AMARILLA" ? "amarillo" : "verde");
     return `
       <tr data-distrito="${item.codigo}">
         <td><strong>${item.distrito}</strong></td>
@@ -72,7 +77,7 @@ export function renderizarIslaAnalyticsDashboard(): string {
         <td>${item.hectareasMonitoreadas.toLocaleString("es-CO")} ha</td>
         <td><strong>${item.tasaInfestacionPct.toFixed(1)}%</strong></td>
         <td>${item.patogenoPredominante}</td>
-        <td><span class="insignia-leyenda ${claseInsignia}">ALERTA ${item.nivelAlerta}</span></td>
+        <td><span class="insignia-estado ${item.claseSemantica}">${item.estadoDiagnostico}</span></td>
       </tr>
     `;
   }).join("");
@@ -81,7 +86,7 @@ export function renderizarIslaAnalyticsDashboard(): string {
   <section class="tarjeta-isla" id="isla-tablero-analitico">
     <div class="encabezado-isla">
       <div>
-        <h2>Tablero de Vigilancia Fitosanitaria — convenio técnico FEDEARROZ / AGROSAVIA</h2>
+        <h2>Tablero de Vigilancia Fitosanitaria — Convenio Técnico FEDEARROZ / AGROSAVIA</h2>
         <p class="subtitulo">Consolidado en tiempo real de vuelos VANT (GeoTIFF) y capturas móviles Offline-First en el Tolima</p>
       </div>
       <div class="controles-isla">
@@ -94,6 +99,13 @@ export function renderizarIslaAnalyticsDashboard(): string {
           <option value="PRADO_PURIFICACION">Prado - Purificación</option>
         </select>
       </div>
+    </div>
+
+    <div class="leyenda-calor">
+      <span class="insignia-estado sano">Cultivo Sano (#4CAF50)</span>
+      <span class="insignia-estado alerta">Alerta Temprana (#FFB300)</span>
+      <span class="insignia-estado critico">Plaga Detectada (#D32F2F)</span>
+      <span class="insignia-estado desconocido">Objeto No Identificado (#6C757D)</span>
     </div>
 
     <div class="rejilla-kpis">
@@ -129,7 +141,7 @@ export function renderizarIslaAnalyticsDashboard(): string {
             <th>Área Evaluada</th>
             <th>Índice de Infestación</th>
             <th>Diagnóstico Predominante</th>
-            <th>Semáforo ICA</th>
+            <th>Estado Fitosanitario</th>
           </tr>
         </thead>
         <tbody>
